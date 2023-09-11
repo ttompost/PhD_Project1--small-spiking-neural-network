@@ -1,0 +1,40 @@
+% Hodgkin-Huxley sodium current
+% parameters
+gNa=50 % max sodium conductance, mS/cm2
+ENa=50 % mV
+Na_c1 = 0.32
+Na_c2 = 0.28
+Na_V1 = 0 % threshold
+Na_V2 = 13
+Na_V3 = 13
+Na_V4 = 4
+Na_V5 = 40
+Na_V6 = 40
+Na_V7 = 5
+Na_c3 = 0.128
+Na_c4 = 4
+Na_V8 = 17
+Na_V9 = 18
+Na_V10 = 40
+Na_V11 = 5
+IC_noise=0; h_IC=0; m_IC=0
+
+% functions
+aM(X) = (-Na_c1.*(X-Na_V1-Na_V2))./(exp(-(X-Na_V1-Na_V3)./Na_V4)-1)
+bM(X) = (Na_c2.*(X-Na_V1-Na_V5))./(exp((X-Na_V1-Na_V6)./Na_V7)-1)
+aH(X) = Na_c3.*exp(-(X-Na_V1-Na_V8)./Na_V9)
+bH(X) = Na_c4./(1+exp(-(X-Na_V1-Na_V10)./Na_V11))
+INa(X,m,h) = -gNa.*m.^3.*h.*(X-ENa)
+
+% ODEs and ICs
+m' = aM(X).*(1-m) - bM(X).*m
+h' = aH(X).*(1-h) - bH(X).*h
+h(0)=h_IC+IC_noise.*rand(1,Npop)
+m(0)=m_IC+IC_noise.*rand(1,Npop)
+
+% linkers
+@current += INa(X,m,h)
+
+
+%%% REFERENCE
+% Pospischil, Martin, Maria Toledo-Rodriguez, Cyril Monier, Zuzanna Piwkowska, Thierry Bal, Yves Frégnac, Henry Markram, and Alain Destexhe. “Minimal Hodgkin–Huxley Type Models for Different Classes of Cortical and Thalamic Neurons.” Biological Cybernetics 99, no. 4 (November 1, 2008): 427–41. https://doi.org/10.1007/s00422-008-0263-8.

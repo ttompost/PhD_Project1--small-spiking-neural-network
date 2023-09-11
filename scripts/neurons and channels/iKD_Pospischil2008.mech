@@ -1,0 +1,30 @@
+% Hodgkin-Huxley potassium current
+% parameters
+gK=5 % mS/cm2
+EK=-90 % mV
+K_c1 = 0.032
+K_c2 = 0.5
+K_V1 = 0 % threshold
+K_V2 = 15
+K_V3 = 15
+K_V4 = 5
+K_V5 = 10
+K_V6 = 40
+IC_noise=0; n_IC=0
+
+% functions
+aN(X) = (-K_c1.*(X-K_V1-K_V2))./(exp(-(X-K_V1-K_V3)./K_V4)-1)
+bN(X) = K_c2.*exp(-(X-K_V1-K_V5)./K_V6)
+IK(X,n) = -gK.*n.^4.*(X-EK)
+
+% ODEs and ICs
+n' = aN(X).*(1-n) - bN(X).*n
+n(0)=n_IC+IC_noise.*rand(1,Npop)
+
+% linkers
+@current += IK(X,n)
+
+
+%%% REFERENCE
+% Pospischil, Martin, Maria Toledo-Rodriguez, Cyril Monier, Zuzanna Piwkowska, Thierry Bal, Yves Frégnac, Henry Markram, and Alain Destexhe. “Minimal Hodgkin–Huxley Type Models for Different Classes of Cortical and Thalamic Neurons.” Biological Cybernetics 99, no. 4 (November 1, 2008): 427–41. https://doi.org/10.1007/s00422-008-0263-8.
+

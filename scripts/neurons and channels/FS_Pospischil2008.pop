@@ -1,0 +1,12 @@
+% FS (adapted from Pospischil 2008)
+% usage: dsPlot(dsSimulate('FS','vary',{'FS','Iapp',5}))
+
+FS:
+dV/dt=(Iapp+@current)./Cm; {iNa_Pospischil2008,iKD_Pospischil2008,iM_Pospischil2008,ileak}@current; V(0)=(-65+vm_shift)*ones(1,N_pop)
+Iapp = 0;
+vm_shift=0;
+Cm=1; % uF/cm2
+
+
+%%% REFERENCE
+% Pospischil, Martin, Maria Toledo-Rodriguez, Cyril Monier, Zuzanna Piwkowska, Thierry Bal, Yves Frégnac, Henry Markram, and Alain Destexhe. “Minimal Hodgkin–Huxley Type Models for Different Classes of Cortical and Thalamic Neurons.” Biological Cybernetics 99, no. 4 (November 1, 2008): 427–41. https://doi.org/10.1007/s00422-008-0263-8.

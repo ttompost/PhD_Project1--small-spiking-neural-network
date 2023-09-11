@@ -1,0 +1,31 @@
+% iM: muscarinic receptor suppressed, slow, noninactivating potassium current (ref: Kramer/Kopell 2008)
+% Tags: M-current, potassium, channel, intrinsic
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Parameters
+E_M = -100 % mV (from Zou2006)
+gM = 0.004 % mS/cm2; regulates the rate of adaptation (higher gM, stronger adaptation)
+mM_tau_max = 4*1e3 % ms
+mM_V1 = 35
+mM_V2 = 10
+mM_V3 = 3.3
+mM_V4 = 35
+mM_V5 = 20
+mM_V6 = 35
+mM_V7 = 20
+IC = 0; IC_noise=0;
+
+% Functions
+mM_inf(X) = 1./(1+exp(-(X+mM_V1)./mM_V2))
+tau_mM(X) = mM_tau_max./(mM_V3.*exp((X+mM_V4)./mM_V5)+exp(-(X+mM_V6)./mM_V7))
+IM(X,mM) = -gM.*mM.*(X-E_M)
+
+% ODE
+mM' = (mM_inf(X)-mM)./tau_mM(X)
+mM(0)=IC+IC_noise.*rand(Npop,1)
+
+% Interface
+@current += IM(X,mM)
+
+%%% REFERENCE
+% Pospischil, Martin, Maria Toledo-Rodriguez, Cyril Monier, Zuzanna Piwkowska, Thierry Bal, Yves Frégnac, Henry Markram, and Alain Destexhe. “Minimal Hodgkin–Huxley Type Models for Different Classes of Cortical and Thalamic Neurons.” Biological Cybernetics 99, no. 4 (November 1, 2008): 427–41. https://doi.org/10.1007/s00422-008-0263-8.
+

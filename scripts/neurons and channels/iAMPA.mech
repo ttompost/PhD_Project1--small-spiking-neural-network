@@ -1,0 +1,27 @@
+% iAMPA: synaptic current, fast threshold modulation with excitatory AMPAergic parameters
+% parameters
+gAMPA = [0.1]
+EAMPA = [0]
+tauD = [2]
+tauR = [0.2]
+IC = [0.1]
+IC_noise = [0]
+downscaleFactor =1 % added Tompos 10 Feb 2023
+x_shift = 0 % added Tompos 20 Jul 2023
+slope=10
+ 
+% fixed variables
+netcon = ones(N_pre,N_post)
+
+% functions
+IAMPA(X,s) = (-gAMPA.*(s*netcon).*(X-EAMPA))./downscaleFactor 
+ 
+% ODEs and ICs
+s' = -s./tauD + 1/2*(1+tanh((X_pre+x_shift)/slope)).*((1-s)/tauR)
+s(0) = IC+IC_noise.*rand(1,N_pre)
+
+monitor IAMPA % always record the synaptic current
+ 
+% linkers
+@current += IAMPA(X_post,s)
+ 
