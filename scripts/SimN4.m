@@ -1,4 +1,4 @@
-function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_mode, seed_num, endSim)
+function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_mode, seed_num, endSim, sparse_info)
 
 % FINAL VERSION (9th Jan 2024) // Tompos, T. (t.tompos@neurophysiology.nl)
 
@@ -12,13 +12,29 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
 % (7) input_mode:   pass 'exp' to stimulate the VPM with experimental data (this is where ang and curv have to be properly defined); if something else is passed, the script runs with synthetic thalamus (predefined parameters)
 % (8) endSim:       length of the simulation, in ms
 
+if nargin < 10 || isempty(sparse_info)
+    sparsify = 0;
+    vary_conn = 'none';
+    sparse_fact = 1;
+else
+    sparsify = sparse_info{1};
+    vary_conn = sparse_info{2};
+    sparse_fact = sparse_info{3};
+    
+    fprintf('Sparsifying %i...', sparsify)
+end
+
 %%%%%%%%%%%%%%%%%%
 % "The resulting neuron numbers per layer in the average [rat barrel] column
 % were (...) 2039 ± 524 (L2), 3735 ± 905 (L3) and 4447 6 439 (L4)." 
 % Meyer, Hanno S., Verena C. Wimmer, M. Oberlaender, Christiaan P.J. de Kock, Bert Sakmann, and Moritz Helmstaedter. 
 % “Number and Laminar Distribution of Neurons in a Thalamocortical Projection Column of Rat Vibrissal Cortex.” 
 % Cerebral Cortex (New York, NY) 20, no. 10 (October 2010): 2277–86. https://doi.org/10.1093/cercor/bhq067.
-rng(seed_num)
+
+if ~isempty(seed_num)
+    rng(seed_num)
+end
+
 simulation_dt = 0.01; % ms
 
 ctx_downscale = 20;
@@ -118,10 +134,10 @@ L2.populations(end).parameters=[fsparam, 'noise_amp',100];
 % calculate connectivity matrices: 
     % conmat=ConnMx(activity, layer, vary, Npre, Npost, Pconn, Nb, sf)
 
-l2EEnetcon=ConnMx(0,'intrahom','none',l2e_num,l2e_num,ConnMxParam('l2ee','pconn', pconn_e),ConnMxParam('l2ee','nb', synstr_e),1); % l2E to l2E % removed autaptic
-l2EInetcon=ConnMx(0,'intrahet','none',l2e_num,l2i_num,ConnMxParam('l2ei','pconn', pconn_e),ConnMxParam('l2ei','nb', synstr_e),1); % l2E to l2I
-l2IEnetcon=ConnMx(0,'intrahet','none',l2i_num,l2e_num,ConnMxParam('l2ie','pconn', pconn_i),ConnMxParam('l2ie','nb', synstr_i),1); % l2I to l2E 
-l2IInetcon=ConnMx(0,'intrahom','none',l2i_num,l2i_num,ConnMxParam('l2ii','pconn', pconn_i),ConnMxParam('l2ii','nb', synstr_i),1); % l2I to l2I % removed autaptic
+l2EEnetcon=ConnMx(ActSyn('l2ee',sparsify),'intrahom',vary_conn,l2e_num,l2e_num,ConnMxParam('l2ee','pconn', pconn_e),ConnMxParam('l2ee','nb', synstr_e),sparse_fact); % l2E to l2E % removed autaptic
+l2EInetcon=ConnMx(ActSyn('l2ei',sparsify),'intrahet',vary_conn,l2e_num,l2i_num,ConnMxParam('l2ei','pconn', pconn_e),ConnMxParam('l2ei','nb', synstr_e),sparse_fact); % l2E to l2I
+l2IEnetcon=ConnMx(ActSyn('l2ie',sparsify),'intrahet',vary_conn,l2i_num,l2e_num,ConnMxParam('l2ie','pconn', pconn_i),ConnMxParam('l2ie','nb', synstr_i),sparse_fact); % l2I to l2E 
+l2IInetcon=ConnMx(ActSyn('l2ii',sparsify),'intrahom',vary_conn,l2i_num,l2i_num,ConnMxParam('l2ii','pconn', pconn_i),ConnMxParam('l2ii','nb', synstr_i),sparse_fact); % l2I to l2I % removed autaptic
 
 % connect populations in L2 layer 
 L2.connections(1).direction='L2E->L2E'; % E to E
@@ -156,10 +172,10 @@ L3.populations(end).parameters=[fsparam, 'noise_amp',100];
 
 % modify layers with params from Huang,C.(2016)
     % l3 modifications: connection params
-l3EEnetcon=ConnMx(0,'intrahom','none',l3e_num,l3e_num,ConnMxParam('l3ee','pconn', pconn_e),ConnMxParam('l3ee','nb', synstr_e),1); % l2E to l2E % removed autoptic
-l3EInetcon=ConnMx(0,'intrahet','none',l3e_num,l3i_num,ConnMxParam('l3ei','pconn', pconn_e),ConnMxParam('l3ei','nb', synstr_e),1); % l2E to l2I
-l3IEnetcon=ConnMx(0,'intrahet','none',l3i_num,l3e_num,ConnMxParam('l3ie','pconn', pconn_i),ConnMxParam('l3ie','nb', synstr_i),1); % l2I to l2E 
-l3IInetcon=ConnMx(0,'intrahom','none',l3i_num,l3i_num,ConnMxParam('l3ii','pconn', pconn_i),ConnMxParam('l3ii','nb', synstr_i),1); % l2I to l2I % removed autoptic
+l3EEnetcon=ConnMx(ActSyn('l3ee',sparsify),'intrahom',vary_conn,l3e_num,l3e_num,ConnMxParam('l3ee','pconn', pconn_e),ConnMxParam('l3ee','nb', synstr_e),sparse_fact); % l2E to l2E % removed autoptic
+l3EInetcon=ConnMx(ActSyn('l3ei',sparsify),'intrahet',vary_conn,l3e_num,l3i_num,ConnMxParam('l3ei','pconn', pconn_e),ConnMxParam('l3ei','nb', synstr_e),sparse_fact); % l2E to l2I
+l3IEnetcon=ConnMx(ActSyn('l3ie',sparsify),'intrahet',vary_conn,l3i_num,l3e_num,ConnMxParam('l3ie','pconn', pconn_i),ConnMxParam('l3ie','nb', synstr_i),sparse_fact); % l2I to l2E 
+l3IInetcon=ConnMx(ActSyn('l3ii',sparsify),'intrahom',vary_conn,l3i_num,l3i_num,ConnMxParam('l3ii','pconn', pconn_i),ConnMxParam('l3ii','nb', synstr_i),sparse_fact); % l2I to l2I % removed autoptic
 
 % connect populations in L3 layer 
 L3.connections(1).direction='L3E->L3E'; % E to E
@@ -194,10 +210,10 @@ L4.populations(end).mechanism_list={'noise'};
 L4.populations(end).parameters=[fsparam, 'noise_amp',100];
 
 %     % l4 modifications: connection params
-l4EEnetcon=ConnMx(0,'intrahom','none',l4e_num,l4e_num,ConnMxParam('l4ee','pconn', pconn_e),ConnMxParam('l4ee','nb', synstr_e),1); 
-l4EInetcon=ConnMx(0,'intrahet','none',l4e_num,l4i_num,ConnMxParam('l4ei','pconn', pconn_e),ConnMxParam('l4ei','nb', synstr_e),1); 
-l4IEnetcon=ConnMx(0,'intrahet','none',l4i_num,l4e_num,ConnMxParam('l4ie','pconn', pconn_i),ConnMxParam('l4ie','nb', synstr_i),1); 
-l4IInetcon=ConnMx(0,'intrahom','none',l4i_num,l4i_num,ConnMxParam('l4ii','pconn', pconn_i),ConnMxParam('l4ii','nb', synstr_i),1); 
+l4EEnetcon=ConnMx(ActSyn('l4ee',sparsify),'intrahom',vary_conn,l4e_num,l4e_num,ConnMxParam('l4ee','pconn', pconn_e),ConnMxParam('l4ee','nb', synstr_e),sparse_fact); 
+l4EInetcon=ConnMx(ActSyn('l4ei',sparsify),'intrahet',vary_conn,l4e_num,l4i_num,ConnMxParam('l4ei','pconn', pconn_e),ConnMxParam('l4ei','nb', synstr_e),sparse_fact); 
+l4IEnetcon=ConnMx(ActSyn('l4ie',sparsify),'intrahet',vary_conn,l4i_num,l4e_num,ConnMxParam('l4ie','pconn', pconn_i),ConnMxParam('l4ie','nb', synstr_i),sparse_fact); 
+l4IInetcon=ConnMx(ActSyn('l4ii',sparsify),'intrahom',vary_conn,l4i_num,l4i_num,ConnMxParam('l4ii','pconn', pconn_i),ConnMxParam('l4ii','nb', synstr_i),sparse_fact); 
 
 
 % connect populations in L4 layer 
@@ -255,8 +271,8 @@ if strcmp(input_mode, 'exp')
     
     % make connectivity matrices for inter-layer connections: netcon=ConnMx(activity,layer,vary,Npre,Npost,va,Nb)
     % Th -> L4
-    thl4EEnetcon=ConnMx(0,'trans','none',VPM_num,l4e_num,ConnMxParam('thl4e','pconn', pconn_e),ConnMxParam('thl4e','nb', pconn_e),1); % corr
-    thl4EInetcon=ConnMx(0,'trans','none',VPM_num,l4i_num,ConnMxParam('thl4i','pconn', pconn_e),ConnMxParam('thl4i','nb', pconn_e),1); % corr
+    thl4EEnetcon=ConnMx(ActSyn('thl4e',sparsify),'trans',vary_conn,VPM_num,l4e_num,ConnMxParam('thl4e','pconn', pconn_e),ConnMxParam('thl4e','nb', pconn_e),sparse_fact); % corr
+    thl4EInetcon=ConnMx(ActSyn('thl4i',sparsify),'trans',vary_conn,VPM_num,l4i_num,ConnMxParam('thl4i','pconn', pconn_e),ConnMxParam('thl4i','nb', pconn_e),sparse_fact); % corr
     
     % add feedforward connections (th->l4; l4->l3; l3->l2)
         % thalamic to l4
@@ -323,10 +339,10 @@ else
 
     % make connectivity matrices for inter-layer connections: netcon=ConnMx(activity,layer,vary,Npre,Npost,va,Nb)
         % Th -> L4
-    thl4EEnetcon2=ConnMx(0,'trans','none',vpmNum2,l4e_num,ConnMxParam('thl4e','pconn', pconn_e)*uncorr_contribution,ConnMxParam('thl4e','nb', pconn_e),1); % uncorr
-    thl4EInetcon2=ConnMx(0,'trans','none',vpmNum2,l4i_num,ConnMxParam('thl4i','pconn', pconn_e)*uncorr_contribution,ConnMxParam('thl4i','nb', pconn_e),1); % uncorr
-    thl4EEnetcon1=ConnMx(0,'trans','none',vpmNum1,l4e_num,ConnMxParam('thl4e','pconn', pconn_e)*corr_contribution,ConnMxParam('thl4e','nb', pconn_e),1); % corr
-    thl4EInetcon1=ConnMx(0,'trans','none',vpmNum1,l4i_num,ConnMxParam('thl4i','pconn', pconn_e)*corr_contribution,ConnMxParam('thl4i','nb', pconn_e),1); % corr
+    thl4EEnetcon2=ConnMx(ActSyn('thl4e',sparsify),'trans',vary_conn,vpmNum2,l4e_num,ConnMxParam('thl4e','pconn', pconn_e)*uncorr_contribution,ConnMxParam('thl4e','nb', pconn_e),sparse_fact); % uncorr
+    thl4EInetcon2=ConnMx(ActSyn('thl4i',sparsify),'trans',vary_conn,vpmNum2,l4i_num,ConnMxParam('thl4i','pconn', pconn_e)*uncorr_contribution,ConnMxParam('thl4i','nb', pconn_e),sparse_fact); % uncorr
+    thl4EEnetcon1=ConnMx(ActSyn('thl4e',sparsify),'trans',vary_conn,vpmNum1,l4e_num,ConnMxParam('thl4e','pconn', pconn_e)*corr_contribution,ConnMxParam('thl4e','nb', pconn_e),sparse_fact); % corr
+    thl4EInetcon1=ConnMx(ActSyn('thl4i',sparsify),'trans',vary_conn,vpmNum1,l4i_num,ConnMxParam('thl4i','pconn', pconn_e)*corr_contribution,ConnMxParam('thl4i','nb', pconn_e),sparse_fact); % corr
   
     %-----------------------------------------------------------------------------------------------------------
     % add feedforward connections (th->l4; l4->l3; l3->l2)
@@ -361,14 +377,14 @@ else
 end
 
 %     % L4 -> L3
-l4l3EEnetcon=ConnMx(0,'trans','none',l4e_num,l3e_num,ConnMxParam('l4el3e','pconn', pconn_e),ConnMxParam('l4el3e','nb', synstr_e),1);
-l4l3EInetcon=ConnMx(0,'trans','none',l4e_num,l3i_num,ConnMxParam('l4el3i','pconn', pconn_e),ConnMxParam('l4el3i','nb', synstr_e),1);
-l4l3IEnetcon=ConnMx(0,'trans','none',l4i_num,l3e_num,ConnMxParam('l4il3e','pconn', pconn_i),ConnMxParam('l4il3e','nb', synstr_i),1);
+l4l3EEnetcon=ConnMx(ActSyn('l4el3e',sparsify),'trans',vary_conn,l4e_num,l3e_num,ConnMxParam('l4el3e','pconn', pconn_e),ConnMxParam('l4el3e','nb', synstr_e),sparse_fact);
+l4l3EInetcon=ConnMx(ActSyn('l4el3i',sparsify),'trans',vary_conn,l4e_num,l3i_num,ConnMxParam('l4el3i','pconn', pconn_e),ConnMxParam('l4el3i','nb', synstr_e),sparse_fact);
+l4l3IEnetcon=ConnMx(ActSyn('l4il3e',sparsify),'trans',vary_conn,l4i_num,l3e_num,ConnMxParam('l4il3e','pconn', pconn_i),ConnMxParam('l4il3e','nb', synstr_i),sparse_fact);
     % L3 -> L2
-l3l2EEnetcon=ConnMx(0,'trans','none',l3e_num,l2e_num,ConnMxParam('l3el2e','pconn', pconn_e),ConnMxParam('l3el2e','nb', synstr_e),1);
-l3l2EInetcon=ConnMx(0,'trans','none',l3e_num,l2i_num,ConnMxParam('l3el2i','pconn', pconn_e),ConnMxParam('l3el2i','nb', synstr_e),1);
-l3l2IEnetcon=ConnMx(0,'trans','none',l3i_num,l2e_num,ConnMxParam('l3il2e','pconn', pconn_i),ConnMxParam('l3il2e','nb', synstr_i),1);
-l3l2IInetcon=ConnMx(0,'trans','none',l3i_num,l2i_num,ConnMxParam('l3il2i','pconn', pconn_i),ConnMxParam('l3il2i','nb', synstr_i),1);
+l3l2EEnetcon=ConnMx(ActSyn('l3el2e',sparsify),'trans',vary_conn,l3e_num,l2e_num,ConnMxParam('l3el2e','pconn', pconn_e),ConnMxParam('l3el2e','nb', synstr_e),sparse_fact);
+l3l2EInetcon=ConnMx(ActSyn('l3el2i',sparsify),'trans',vary_conn,l3e_num,l2i_num,ConnMxParam('l3el2i','pconn', pconn_e),ConnMxParam('l3el2i','nb', synstr_e),sparse_fact);
+l3l2IEnetcon=ConnMx(ActSyn('l3il2e',sparsify),'trans',vary_conn,l3i_num,l2e_num,ConnMxParam('l3il2e','pconn', pconn_i),ConnMxParam('l3il2e','nb', synstr_i),sparse_fact);
+l3l2IInetcon=ConnMx(ActSyn('l3il2i',sparsify),'trans',vary_conn,l3i_num,l2i_num,ConnMxParam('l3il2i','pconn', pconn_i),ConnMxParam('l3il2i','nb', synstr_i),sparse_fact);
 
     % l4 to l23 (l4 to l3)
 Network.connections(end+1).direction='L4E->L3E'; % l4E to l3E
