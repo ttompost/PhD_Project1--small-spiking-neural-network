@@ -433,7 +433,7 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
 
     % this part controls if random processes during the simulation (e.g., the thalamic activity) are truly random or fixed-random (with a specific seed) 
     if ~isempty(vpm_seed) % fixed random
-        net = dsSimulate(Network,'tspan',tspan,'dt',simulation_dt, 'random_seed', random_seed);
+        net = dsSimulate(Network,'tspan',tspan,'dt',simulation_dt, 'random_seed', vpm_seed);
     else
         rng('shuffle') % truly random
         net = dsSimulate(Network,'tspan',tspan,'dt',simulation_dt);
