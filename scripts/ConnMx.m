@@ -1,4 +1,4 @@
-function Mx=ConnMx(activity, layer, vary, Npre, Npost, Pconn, Nb, sf)
+function Mx=ConnMx(activity, layer, vary, Npre, Npost, Pconn, Nb, sf, seed)
 % this function calculates the connectivity matrix with various input
 % conditions:
     % (1) activity:
@@ -33,6 +33,13 @@ function Mx=ConnMx(activity, layer, vary, Npre, Npost, Pconn, Nb, sf)
 m = Npre; % desired row size
 n = Npost; % desired column size
 
+if ~exist('seed','var') || isempty(seed)
+    rng('shuffle')
+else
+    rng(seed);
+%     fprintf('Using seed %i for ConnMx.\n',seed);
+end
+
 switch activity 
     case 1 % apply scaling factor
     case 0 % do not apply scaling factor
@@ -47,7 +54,7 @@ switch vary
     case 'bouts' % vary bouton number (i.e. synaptic strength)
         Nb=Nb*sf;
     otherwise
-        disp('Invalid input for "vary" in ConnMx. Probs or Bouton num. are not varied.')
+%         disp('Invalid input for "vary" in ConnMx. Probs or Bouton num. are not varied.')
 end%vary
 
 if Nb == 0; disp('Connx weight is zero, meaning nothing is connected.'); end
