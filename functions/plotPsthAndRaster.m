@@ -47,7 +47,7 @@ function [out1, out2] = plotPsthAndRaster(WhichPlot, SpikeTimes, BinSize, EndTim
                   if size(yVar,1) ~= 1
                       yVar = yVar';
                   end
-                  line([xVar; xVar], [yVar + (c_idx - 1); yVar + c_idx],'color',Col, 'linestyle','-','marker','none','linewidth',1)
+                  line([xVar; xVar], [yVar + (c_idx - 1); yVar + c_idx],'color',Col, 'linestyle','-','marker','none','linewidth',3)
               end
           end
           out1 = [];
