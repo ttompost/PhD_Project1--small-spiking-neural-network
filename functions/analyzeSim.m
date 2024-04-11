@@ -85,7 +85,7 @@ function results = analyzeSim(model,lbl, isLIF, VPM_strategy, VPM_onset)
         
         % corr and power
         pxx=[]; fq=[];
-        if ~any(any(isnan(Vm))) && ~any(isnan(mean(Vm,1))) && ~any(mean(Vm,1) > -20)
+        if ~any(any(isnan(Vm))) && ~any(isnan(mean(Vm,1))) %&& ~any(mean(Vm,1) > -20)
             % power from single Vm traces
             [pxx, fq] = pwelch(Vm,[],[],[],Sampling_rate, 'power');
             fq = fq((fq >= 0) & (fq <= 1000),:); % take frequencies between 0 an 1 kHz
@@ -189,6 +189,15 @@ function results = analyzeSim(model,lbl, isLIF, VPM_strategy, VPM_onset)
                 'xcorr_with_vpm_per_cell','xcorr_with_vpm_per_cell_bins','ETAs','STAs','vm_distrib','vm_distrib_bins'});results];
         else
             disp(['Flagged membrane potential trace. Did not analyze ' pop ' in ' lbl '. Check your data.'])
+            reason = [];
+            if any(any(isnan(Vm)))
+                reason{end+1} = 'nans; ';
+            elseif any(isnan(mean(Vm,1)))
+                reason{end+1} = 'nans; ';
+            elseif any(mean(Vm,1) > -20)
+                reason{end+1} = 'depo.';
+            end
+            fprintf('Reason(s) for flagging: %s\n',cell2mat(reason));
 %             pause
         end
     end
