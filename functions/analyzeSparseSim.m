@@ -8,7 +8,22 @@ function AnalysedResults = analyzeSparseSim(Model,lbl)
         SeedNum = Model.SeedNum;
         ScalingFactor = [num2str(Model.SparseExpInfo{1, 3}*100) '%'];
         ScaledParameter = Model.SparseExpInfo{1, 2};
+        
+        GotASeed = 1;
     catch ME
+        GotASeed = 0;
+    end
+    
+    if ~GotASeed
+        try
+            SeedNum = Model.Seeds;
+            ScalingFactor = [];
+            ScaledParameter = [];
+
+            GotASeed = 1;
+        catch ME
+        end
+    else
         SeedNum = [];
         ScalingFactor = [];
         ScaledParameter = [];
@@ -50,11 +65,20 @@ function AnalysedResults = analyzeSparseSim(Model,lbl)
     EventTimes = Edges_VPMPop(EventIdx); 
     SortedEventTimes = sort(EventTimes);
     
+    FieldNames = cellfun(@(x) split(x,'_'), fieldnames(Model.model.fixed_variables),'uniformoutput',false);
     %% Analyse cortical (CTX) activity
     for pop = 1:length(CTXNames)
         PopNameLong = CTXNamesLong{pop};
         PopNameShort = CTXNames{pop};
         NeuronNumber = size(Model.(PopNameLong),2);
+        
+        %% Connectivity matrices
+        NetCons = [];
+        for fnms = 1:length(FieldNames)
+            if strcmp(FieldNames{fnms, 1}{1, 1}, PopNameShort) && strcmp(FieldNames{fnms, 1}{end, 1}, 'netcon')
+                NetCons.(cell2mat(join(FieldNames{fnms, 1},'_'))) = Model.model.fixed_variables.(cell2mat(join(FieldNames{fnms, 1},'_')));
+            end
+        end
         
         %% Average number of spikes per second, for every neuron
         SpikeTimes = cellfun(@(x) x(x>CutStartTime), Model.([PopNameLong '_spike_times']), 'uniformoutput', false);
@@ -231,21 +255,31 @@ function AnalysedResults = analyzeSparseSim(Model,lbl)
         WithinEvent_Start = WindowPairs(:,1);
         WithinEvent_End = WindowPairs(:,2);
        
-        
-        for nETA = 1:length(OutOfEvent_Start)
-            nETA_activity = cellfun(@(x) x(x>OutOfEvent_Start(nETA) & x<OutOfEvent_End(nETA)), SpikeTimes, 'uniformoutput', false);
-            if nETA<length(OutOfEvent_Start)
-                ETA_activity = cellfun(@(x) x(x>WithinEvent_Start(nETA) & x<WithinEvent_End(nETA)), SpikeTimes, 'uniformoutput', false);
+        DoThis = 1;
+        if DoThis
+            for nETA = 1:length(OutOfEvent_Start)
+                nETA_activity = cellfun(@(x) x(x>OutOfEvent_Start(nETA) & x<OutOfEvent_End(nETA)), SpikeTimes, 'uniformoutput', false);
+                if nETA<length(OutOfEvent_Start)
+                    ETA_activity = cellfun(@(x) x(x>WithinEvent_Start(nETA) & x<WithinEvent_End(nETA)), SpikeTimes, 'uniformoutput', false);
+                end
             end
+
+            % randomly sampled spike times
+            nETA_samples = length(cell2mat(nETA_activity'));
+            ETA_samples = length(cell2mat(ETA_activity'));
+            NumSamples = round((nETA_samples + ETA_samples) / 2);
+
+            AllSpikeTimes = cell2mat(SpikeTimes');
+            if NumSamples >= 1
+                RTA_activity = AllSpikeTimes(randi(length(AllSpikeTimes), NumSamples,1));
+            else
+                RTA_activity = [];
+            end
+        else
+            nETA_activity = [];
+            ETA_activity = [];
+            RTA_activity = [];
         end
-        
-        % randomly sampled spike times
-        nETA_samples = length(cell2mat(nETA_activity'));
-        ETA_samples = length(cell2mat(ETA_activity'));
-        NumSamples = round((nETA_samples + ETA_samples) / 2);
-        
-        AllSpikeTimes = cell2mat(SpikeTimes');
-        RTA_activity = AllSpikeTimes(randi(length(AllSpikeTimes), NumSamples,1));
         
         AnalysedResults = [table(...
             {lbl}, ... % Simulation label
@@ -269,9 +303,10 @@ function AnalysedResults = analyzeSparseSim(Model,lbl)
             {nETA_activity},...
             {ETA_activity},...
             {RTA_activity},...
+            {NetCons},...
             'VariableNames',{'SimulationLabel'; 'Seed'; 'ScalingFactor'; 'ScaledParameter'; 'Population'; 'SimulationDuration'; 'SpikeTimes'; 'SpikesPerSec'; 'MeanISI'; 'VmDistribution'; 'VmDistEdges';...
             'SingleNeuronPSTH_XCorr'; 'SingleNeuronPSTH_XCorrLags'; 'PopulationPSTH_XCorr'; 'PopulationPSTH_XCorrLags'; 'VPMEventNum'; 'PSTHBinSize'; 'VPMEventData';...
-            'nETA_spikes'; 'ETA_spikes'; 'RTA_spikes'}); AnalysedResults];    
+            'nETA_spikes'; 'ETA_spikes'; 'RTA_spikes'; 'ConnMx'}); AnalysedResults];    
     end
 end
 

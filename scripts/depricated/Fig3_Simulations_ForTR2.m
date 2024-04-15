@@ -1,6 +1,6 @@
 % Path to the code/scripts
-addpath(genpath('/Users/teatompos/Desktop/git_files'))
-addpath(genpath('/Users/teatompos/Desktop/Matlab_scripts/RU_1st_internship_Neurophysiology_Dept/DynaSim'))
+addpath(genpath('...'))
+clear all; close all;
 
 % Saving names prefixes
 
@@ -9,12 +9,14 @@ SaveAn_pre = 'Fig3_Analysis_';
 SaveFig_pre = 'Fig3_';
 
 % Path to save/retrieve results
-ResultsPath = '/Users/teatompos/Library/CloudStorage/GoogleDrive-t.tompos@neurophysiology.nl/.shortcut-targets-by-id/1f3yqxuDDFP_-nrGlSKbqcVC3RJJZZWTiWyK5Kl5x65maOi21i1OEIloSOR_UsCfsdiH2FbZf/Lab notebook Tea Tompoš/Thesis/Chapter 2 (The model)/Simulations/ParamSensitivity/Fixed_VPM_input';
+ResultsPath = '...';
 addpath(genpath(ResultsPath))
 
 Simulate = 1;
 SaveResults = 1;
 Analyse = 1;
+
+SaveAnalysis = 1;
 
 cd(ResultsPath)
 
@@ -42,7 +44,7 @@ repetitions = 10;
 % Stimulate different networks with identical thalamic input
 if Simulate
     for s_num = RandomSeeds(3)
-        for synStr = 1:length(synScalingFactors)
+        for synStr = round(length(synScalingFactors))+1:length(synScalingFactors)
             failedStuff = [];
             newSim = 0;
             newAn = 0;
@@ -79,10 +81,9 @@ if Simulate
 
                     if Analyse
                         if newAn
-                            SNN_analysed = [SNN_analysed; analyzeSim(SpikingNetwork, NetSaveName, isLif, 'threshold')];
+                            SNN_analysed = [SNN_analysed; analyzeSparseSim(SpikingNetwork, NetSaveName)];
 
                             % inermediate save
-                            cd(AnalysisPath)
                             AnSaveName = sprintf('%s_S%i_Seed%i_intermediate', SaveAn_pre, round(synScalingFactors(synStr)*100), s_num);
                             save(AnSaveName, 'SNN_analysed', '-v7.3')
                         end
@@ -92,7 +93,6 @@ if Simulate
                end
             end
             if SaveAnalysis
-                cd(AnalysisPath)
                 AnSaveName = sprintf('%s_S%i_Seed%i', SaveAn_pre, round(synScalingFactors(synStr)*100), s_num);
                 save(AnSaveName, 'SNN_analysed', '-v7.3')
                 

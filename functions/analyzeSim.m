@@ -97,7 +97,7 @@ function results = analyzeSim(model,lbl, isLIF, VPM_strategy, VPM_onset)
             periodicity_per_cell=[];
             for neuron = 1:size(Vm,2)
                 % autocorrelations of single Vm traces
-                [vm_autox(neuron,:), vm_lags(neuron,:)] = xcorr(Vm(:,neuron)-mean(Vm(:,neuron)), 'normalized');
+                [vm_autox(neuron,:), vm_lags(neuron,:)] = xcorr(Vm(:,neuron)-mean(Vm(:,neuron)), 'coeff');
                 
                 % calculate periodicity
                 peakThreshold = 0.2;
@@ -112,7 +112,7 @@ function results = analyzeSim(model,lbl, isLIF, VPM_strategy, VPM_onset)
                 end
                 % crosscorrelation between vpm psth and single neuron psth
                 psth_single_neuron = plotPsthAndRaster('psth',spk_times(neuron),binSize,cutTime_vec(end),0,'k');
-                [psth_xcorr_single(neuron,:), psth_lags_single_xcorr(neuron,:)] = xcorr(vpm_psth,psth_single_neuron, 'normalized');
+                [psth_xcorr_single(neuron,:), psth_lags_single_xcorr(neuron,:)] = xcorr(vpm_psth,psth_single_neuron, 'coeff');
             end
             % get only positive part of xcorr and autocorr
             vm_autox = vm_autox(:,round(size(vm_autox,2)/2):end);
