@@ -19,8 +19,6 @@ function AnalysedResults = analyzeSparseSim(Model,lbl)
             SeedNum = Model.Seeds;
             ScalingFactor = [];
             ScaledParameter = [];
-
-            GotASeed = 1;
         catch ME
         end
     else
