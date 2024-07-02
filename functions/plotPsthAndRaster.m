@@ -20,8 +20,7 @@ function [out1, out2] = plotPsthAndRaster(WhichPlot, SpikeTimes, BinSize, EndTim
           [psth_count(c_idx,:), psth_edges(c_idx,:)] = histcounts(this_cell,0:BinSize:EndTime);
       end
     else 
-        fprintf('Only cell arrays with spike times per neuron are accepted for now. \n')
-        return
+        error('Only cell arrays with spike times per neuron are accepted for now.')
     end
 
    switch WhichPlot
