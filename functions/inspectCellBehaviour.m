@@ -106,7 +106,7 @@ warning('off')
     % ... but first get time windows of interest
     timeWindows = [model.time(1) cutStartTime]; % [start stop] in ms
     tempAnalysis = analyzeSparseSim(model,'test');
-    popIdx = find(strcmp(tempAnalysis.Population, cellToInspect));
+    popIdx = strcmp(tempAnalysis.Population, cellToInspect);
     timeWindows = [timeWindows; cell2mat(cellfun(@(x) [x.PeakTime x.EndTime], tempAnalysis.VPMEventData{popIdx,1}, 'uniformoutput',0)')];
     
     synapticInputs.faulty_not_spiking = []; synapticInputs.faulty_spiking = []; synapticInputs.healthy = [];
@@ -206,171 +206,198 @@ warning('off')
     end
     
     % total syn input sorted
-    tsyn_ht_events_ExcPrevLayer = cell2mat(... % events
-        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.healthy{1, x}.(presynPops(3)).timeWindows(1, 2:length(timeWindows))))),...
-        1:length(synapticInputs.healthy),'uniformoutput',false)...
-        );
-    
-    tsyn_ht_full_ExcPrevLayer = cell2mat(... % simulation without settling time
-        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(3)).fullSimulation{1, 1}),... % full simulation
-        1:length(synapticInputs.healthy),'uniformoutput',false)...
-        ) - cell2mat(...
-        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(3)).timeWindows{1, 1}),... % settling time
-        1:length(synapticInputs.healthy),'uniformoutput',false)...
-        );
-    
-    tsyn_fns_events_ExcPrevLayer = cell2mat(... % events
-        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_not_spiking{1, x}.(presynPops(3)).timeWindows(1, 2:length(timeWindows))))),...
-        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
-        );
-    
-    tsyn_fns_full_ExcPrevLayer = cell2mat(... % simulation without settling time
-        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(3)).fullSimulation{1, 1}),... % full simulation
-        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
-        ) - cell2mat(...
-        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(3)).timeWindows{1, 1}),... % settling time
-        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
-        );
-    
-    tsyn_fs_events_ExcPrevLayer = cell2mat(... % events
-        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_spiking{1, x}.(presynPops(3)).timeWindows(1, 2:length(timeWindows))))),...
-        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-        );
-    
-    tsyn_fs_full_ExcPrevLayer = cell2mat(... % simulation without settling time
-        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(3)).fullSimulation{1, 1}),... % full simulation
-        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-        ) - cell2mat(...
-        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(3)).timeWindows{1, 1}),... % settling time
-        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-        );
-    %
-    tsyn_ht_events_ExcSameLayer = cell2mat(... % events
-        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.healthy{1, x}.(presynPops(1)).timeWindows(1, 2:length(timeWindows))))),...
-        1:length(synapticInputs.healthy),'uniformoutput',false)...
-        );
-    
-    tsyn_ht_full_ExcSameLayer = cell2mat(... % simulation without settling time
-        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(1)).fullSimulation{1, 1}),... % full simulation
-        1:length(synapticInputs.healthy),'uniformoutput',false)...
-        ) - cell2mat(...
-        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(1)).timeWindows{1, 1}),... % settling time
-        1:length(synapticInputs.healthy),'uniformoutput',false)...
-        );
-    
-    tsyn_fns_events_ExcSameLayer = cell2mat(... % events
-        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_not_spiking{1, x}.(presynPops(1)).timeWindows(1, 2:length(timeWindows))))),...
-        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
-        );
-    
-    tsyn_fns_full_ExcSameLayer = cell2mat(... % simulation without settling time
-        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(1)).fullSimulation{1, 1}),... % full simulation
-        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
-        ) - cell2mat(...
-        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(1)).timeWindows{1, 1}),... % settling time
-        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
-        );
-    
-    tsyn_fs_events_ExcSameLayer = cell2mat(... % events
-        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_spiking{1, x}.(presynPops(1)).timeWindows(1, 2:length(timeWindows))))),...
-        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-        );
-    
-    tsyn_fs_full_ExcSameLayer = cell2mat(... % simulation without settling time
-        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(1)).fullSimulation{1, 1}),... % full simulation
-        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-        ) - cell2mat(...
-        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(1)).timeWindows{1, 1}),... % settling time
-        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-        );
-    %
-    tsyn_ht_events_InhSameLayer = cell2mat(... % events
-        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.healthy{1, x}.(presynPops(2)).timeWindows(1, 2:length(timeWindows))))),...
-        1:length(synapticInputs.healthy),'uniformoutput',false)...
-        );
-    
-    tsyn_ht_full_InhSameLayer = cell2mat(... % simulation without settling time
-        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(2)).fullSimulation{1, 1}),... % full simulation
-        1:length(synapticInputs.healthy),'uniformoutput',false)...
-        ) - cell2mat(...
-        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(2)).timeWindows{1, 1}),... % settling time
-        1:length(synapticInputs.healthy),'uniformoutput',false)...
-        );
-    
-    tsyn_fns_events_InhSameLayer = cell2mat(... % events
-        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_not_spiking{1, x}.(presynPops(2)).timeWindows(1, 2:length(timeWindows))))),...
-        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
-        );
-    
-    tsyn_fns_full_InhSameLayer = cell2mat(... % simulation without settling time
-        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(2)).fullSimulation{1, 1}),... % full simulation
-        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
-        ) - cell2mat(...
-        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(2)).timeWindows{1, 1}),... % settling time
-        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
-        );
-    
-    tsyn_fs_events_InhSameLayer = cell2mat(... % events
-        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_spiking{1, x}.(presynPops(2)).timeWindows(1, 2:length(timeWindows))))),...
-        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-        );
-    
-    tsyn_fs_full_InhSameLayer = cell2mat(... % simulation without settling time
-        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(2)).fullSimulation{1, 1}),... % full simulation
-        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-        ) - cell2mat(...
-        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(2)).timeWindows{1, 1}),... % settling time
-        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-        );
+    if ~isempty(synapticInputs.healthy)
+        tsyn_ht_events_ExcPrevLayer = cell2mat(... % events
+            cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(3)), synapticInputs.healthy, 'uniformoutput',false)...
+            );
 
-      
-    if length(presynPops)==4
-        tsyn_ht_events_InhPrevLayer = cell2mat(... % events
-            arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.healthy{1, x}.(presynPops(4)).timeWindows(1, 2:length(timeWindows))))),...
+        tsyn_ht_full_ExcPrevLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(3)).fullSimulation{1, 1}),... % full simulation
+            1:length(synapticInputs.healthy),'uniformoutput',false)...
+            ) - cell2mat(...
+            arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(3)).timeWindows{1, 1}),... % settling time
             1:length(synapticInputs.healthy),'uniformoutput',false)...
             );
 
-        tsyn_ht_full_InhPrevLayer = cell2mat(... % simulation without settling time
-            arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(4)).fullSimulation{1, 1}),... % full simulation
+        tsyn_ht_events_ExcSameLayer = cell2mat(... % events
+            cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(1)), synapticInputs.healthy, 'uniformoutput',false)...
+            );
+
+        tsyn_ht_full_ExcSameLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(1)).fullSimulation{1, 1}),... % full simulation
             1:length(synapticInputs.healthy),'uniformoutput',false)...
             ) - cell2mat(...
-            arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(4)).timeWindows{1, 1}),... % settling time
+            arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(1)).timeWindows{1, 1}),... % settling time
             1:length(synapticInputs.healthy),'uniformoutput',false)...
             );
 
-        tsyn_fns_events_InhPrevLayer = cell2mat(... % events
-            arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_not_spiking{1, x}.(presynPops(4)).timeWindows(1, 2:length(timeWindows))))),...
-            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+        tsyn_ht_events_InhSameLayer = cell2mat(... % events
+            cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(2)), synapticInputs.healthy, 'uniformoutput',false)...
             );
 
-        tsyn_fns_full_InhPrevLayer = cell2mat(... % simulation without settling time
-            arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(4)).fullSimulation{1, 1}),... % full simulation
-            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+        tsyn_ht_full_InhSameLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(2)).fullSimulation{1, 1}),... % full simulation
+            1:length(synapticInputs.healthy),'uniformoutput',false)...
             ) - cell2mat(...
-            arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(4)).timeWindows{1, 1}),... % settling time
-            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+            arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(2)).timeWindows{1, 1}),... % settling time
+            1:length(synapticInputs.healthy),'uniformoutput',false)...
             );
+        
+        if length(presynPops)==4
+            tsyn_ht_events_InhPrevLayer = cell2mat(... % events
+                cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(4)), synapticInputs.healthy, 'uniformoutput',false)...
+                );
 
-        tsyn_fs_events_InhPrevLayer = cell2mat(... % events
-            arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_spiking{1, x}.(presynPops(4)).timeWindows(1, 2:length(timeWindows))))),...
-            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-            );
-
-        tsyn_fs_full_InhPrevLayer = cell2mat(... % simulation without settling time
-            arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(4)).fullSimulation{1, 1}),... % full simulation
-            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-            ) - cell2mat(...
-            arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(4)).timeWindows{1, 1}),... % settling time
-            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
-            );
+            tsyn_ht_full_InhPrevLayer = cell2mat(... % simulation without settling time
+                arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(4)).fullSimulation{1, 1}),... % full simulation
+                1:length(synapticInputs.healthy),'uniformoutput',false)...
+                ) - cell2mat(...
+                arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(4)).timeWindows{1, 1}),... % settling time
+                1:length(synapticInputs.healthy),'uniformoutput',false)...
+                );
+        else
+            tsyn_ht_events_InhPrevLayer = [];
+            tsyn_ht_full_InhPrevLayer = [];
+        end
     else
-        tsyn_ht_events_InhPrevLayer=[];
-        tsyn_ht_full_InhPrevLayer=[];
-        tsyn_fns_events_InhPrevLayer=[];
-        tsyn_fns_full_InhPrevLayer=[];
-        tsyn_fs_events_InhPrevLayer=[];
-        tsyn_fs_full_InhPrevLayer=[];
+        tsyn_ht_events_ExcPrevLayer = [];
+        tsyn_ht_full_ExcPrevLayer = [];
+        tsyn_ht_events_ExcSameLayer = [];
+        tsyn_ht_full_ExcSameLayer = [];
+        tsyn_ht_events_InhSameLayer = [];
+        tsyn_ht_full_InhSameLayer = [];
+        tsyn_ht_events_InhPrevLayer = [];
+        tsyn_ht_full_InhPrevLayer = [];
     end
+    
+    if ~isempty(synapticInputs.faulty_not_spiking)
+        tsyn_fns_events_ExcPrevLayer = cell2mat(... % events
+            cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(3)), synapticInputs.faulty_not_spiking, 'uniformoutput',false)...
+            );
+
+        tsyn_fns_full_ExcPrevLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(3)).fullSimulation{1, 1}),... % full simulation
+            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+            ) - cell2mat(...
+            arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(3)).timeWindows{1, 1}),... % settling time
+            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+            );
+        
+        tsyn_fns_events_ExcSameLayer = cell2mat(... % events
+            cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(1)), synapticInputs.faulty_not_spiking, 'uniformoutput',false)...
+            );
+
+        tsyn_fns_full_ExcSameLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(1)).fullSimulation{1, 1}),... % full simulation
+            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+            ) - cell2mat(...
+            arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(1)).timeWindows{1, 1}),... % settling time
+            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+            );
+        
+        tsyn_fns_events_InhSameLayer = cell2mat(... % events
+            cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(2)), synapticInputs.faulty_not_spiking, 'uniformoutput',false)...
+            );
+
+        tsyn_fns_full_InhSameLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(2)).fullSimulation{1, 1}),... % full simulation
+            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+            ) - cell2mat(...
+            arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(2)).timeWindows{1, 1}),... % settling time
+            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+            );
+        
+        if length(presynPops)==4
+            tsyn_fns_events_InhPrevLayer = cell2mat(... % events
+                cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(4)), synapticInputs.faulty_not_spiking, 'uniformoutput',false)...
+                );
+
+            tsyn_fns_full_InhPrevLayer = cell2mat(... % simulation without settling time
+                arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(4)).fullSimulation{1, 1}),... % full simulation
+                1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+                ) - cell2mat(...
+                arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(4)).timeWindows{1, 1}),... % settling time
+                1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+                );
+        else
+            tsyn_fns_events_InhPrevLayer = [];
+            tsyn_fns_full_InhPrevLayer = [];
+        end
+    else
+        tsyn_fns_events_ExcPrevLayer = [];
+        tsyn_fns_full_ExcPrevLayer = [];
+        tsyn_fns_events_ExcSameLayer = [];
+        tsyn_fns_full_ExcSameLayer = [];
+        tsyn_fns_events_InhSameLayer = [];
+        tsyn_fns_full_InhSameLayer = [];
+        tsyn_fns_events_InhPrevLayer = [];
+        tsyn_fns_full_InhPrevLayer = [];
+    end
+    
+    if ~isempty(synapticInputs.faulty_spiking)
+        tsyn_fs_events_ExcPrevLayer = cell2mat(... % events
+            cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(3)), synapticInputs.faulty_spiking, 'uniformoutput',false)...
+            );
+
+        tsyn_fs_full_ExcPrevLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(3)).fullSimulation{1, 1}),... % full simulation
+            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+            ) - cell2mat(...
+            arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(3)).timeWindows{1, 1}),... % settling time
+            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+            );
+        
+        tsyn_fs_events_ExcSameLayer = cell2mat(... % events
+            cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(1)), synapticInputs.faulty_spiking, 'uniformoutput',false)...
+            );
+
+        tsyn_fs_full_ExcSameLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(1)).fullSimulation{1, 1}),... % full simulation
+            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+            ) - cell2mat(...
+            arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(1)).timeWindows{1, 1}),... % settling time
+            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+            );
+        
+        tsyn_fs_events_InhSameLayer = cell2mat(... % events
+            cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(2)), synapticInputs.faulty_spiking, 'uniformoutput',false)...
+            );
+
+        tsyn_fs_full_InhSameLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(2)).fullSimulation{1, 1}),... % full simulation
+            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+            ) - cell2mat(...
+            arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(2)).timeWindows{1, 1}),... % settling time
+            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+            );
+        
+        if length(presynPops)==4
+            tsyn_fs_events_InhPrevLayer = cell2mat(... % events
+                cellfun(@(x) IntegrateEventsSeparately_PerNeuron(x, presynPops(4)), synapticInputs.faulty_spiking, 'uniformoutput',false)...
+                );
+
+            tsyn_fs_full_InhPrevLayer = cell2mat(... % simulation without settling time
+                arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(4)).fullSimulation{1, 1}),... % full simulation
+                1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+                ) - cell2mat(...
+                arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(4)).timeWindows{1, 1}),... % settling time
+                1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+                );
+        else
+            tsyn_fs_events_InhPrevLayer = [];
+            tsyn_fs_full_InhPrevLayer = [];
+        end
+    else
+        tsyn_fs_events_ExcPrevLayer = [];
+        tsyn_fs_full_ExcPrevLayer = [];
+        tsyn_fs_events_ExcSameLayer = [];
+        tsyn_fs_full_ExcSameLayer = [];
+        tsyn_fs_events_InhSameLayer = [];
+        tsyn_fs_full_InhSameLayer = [];
+        tsyn_fs_events_InhPrevLayer = [];
+        tsyn_fs_full_InhPrevLayer = [];
+    end
+    
     
     % plot another figure if the user wants
     if plon(2)==1
@@ -691,4 +718,12 @@ warning('off')
         'ExcPrevLayer_conns_in_noInhPrev','ExcSameLayer_conns_in_noInhPrev', 'ExcPrevLayer_conns_in_withInhPrev','ExcSameLayer_conns_in_withInhPrev',...
         'totalSyn_ExcPrevLayer_events','totalSyn_ExcSameLayer_events','totalSyn_InhSameLayer_events','totalSyn_InhPrevLayer_events',...
         'totalSyn_ExcPrevLayer_fullExclSetlling','totalSyn_ExcSameLayer_fullExclSetlling','totalSyn_InhSameLayer_fullExclSetlling','totalSyn_InhPrevLayer_fullExclSetlling'});
+end
+
+function r = IntegrateEventsSeparately_PerNeuron(neuronData, presynName)
+    r = [];
+    for evIdx = 2:length(neuronData.(presynName).timeWindows)
+        r(evIdx-1) = trapz(neuronData.(presynName).timeWindows{1, evIdx});
+    end
+    r = sum(r);
 end
