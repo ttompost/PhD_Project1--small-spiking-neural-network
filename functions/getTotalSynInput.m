@@ -1,4 +1,6 @@
-function tsyni = getTotalSynInput(model,popname,cell_idx, signal)
+function tsyni = getTotalSynInput(model,popname,cell_idx,timewindows)
+    % tsyni = total synaptic current
+    
     if contains(popname,'L2')
         presynPops = ["L2E", "L2I","L3E","L3I"];
     elseif contains(popname,'L3E')
@@ -9,55 +11,60 @@ function tsyni = getTotalSynInput(model,popname,cell_idx, signal)
         presynPops = ["L4E","L4I","VPMcorr", "VPMuncorr"];
     end
     
-    if ~exist('signal','var')
-        signal = 0;
-    end
-    
     % to get the total synaptic current per cell in a population, it is
     % enough to work with (e.g.) model.L2E_L3E_iAMPA_IAMPA matrix because
     % SpikingNetwork.L2E_L3E_iAMPA_IAMPA(:,cell_idx) contains AMPAergic
     % activity from all L3E presynaptic partners to the postsynaptic L2E
     % cell_idx cells
     
-    cutStartTime =  100/0.01 + 1; 
-    for ii=1:length(presynPops)
-        if contains(presynPops(ii),'I') 
+    dt = 0.01;
+    tsyni = [];
+    for ii = 1:length(presynPops)
+        if contains(presynPops(ii),'I') % inhibitory presynapses
             currentType = 'iGABAa';
             currentMonitor = 'IGABAa';
-        else
+        else % excitatory presynapses
             currentType = 'iAMPA';
             currentMonitor = 'IAMPA';
         end
-        if contains(popname,'L4') && ii==3
-            if signal
-                synCurrent_preCut = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(1:cutStartTime-1,cell_idx)) + ...
-                    (model.([char(popname) '_' char(presynPops(ii+1)) '_' currentType '_' currentMonitor])(1:cutStartTime-1,cell_idx));
-                synCurrent_postCut = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(cutStartTime:end,cell_idx)) + ...
-                    (model.([char(popname) '_' char(presynPops(ii+1)) '_' currentType '_' currentMonitor])(cutStartTime:end,cell_idx));
-                tsyni.VPM.settlingTime = {synCurrent_preCut};
-                tsyni.VPM.simulationTime = {synCurrent_postCut};
-            else
-                synCurrent_preCut = sum(model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(1:cutStartTime-1,cell_idx)) + ...
-                    sum(model.([char(popname) '_' char(presynPops(ii+1)) '_' currentType '_' currentMonitor])(1:cutStartTime-1,cell_idx));
-                synCurrent_postCut = sum(model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(cutStartTime:end,cell_idx)) + ...
-                    sum(model.([char(popname) '_' char(presynPops(ii+1)) '_' currentType '_' currentMonitor])(cutStartTime:end,cell_idx));
-                tsyni.VPM.settlingTime = synCurrent_preCut;
-                tsyni.VPM.simulationTime = synCurrent_postCut;
+        if exist('timewindows','var')
+            for tw = 1:size(timewindows,1)
+                winStart = find(round(model.time,2) == round(timewindows(tw, 1),2));
+                winEnd = find(round(model.time,2) == round(timewindows(tw, 2),2));
+                if contains(popname,'L4') && ii==3  % VPM presynapses for L4
+                    tsyni.VPM.timeWindows{tw} = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx)) + ...
+                        (model.([char(popname) '_' char(presynPops(ii+1)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx));
+                elseif contains(popname,'L4') && ii==4
+                    ... % VPM will be detected twice, but it was already analysed in the upper condition
+                else
+                    tsyni.(presynPops(ii)).timeWindows{tw} = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx));
+                end
             end
-        elseif contains(popname,'L4') && ii==4
-            ...
+            % add full simulation in the end
+            winStart = 1;
+            winEnd = length(model.time);
+            if contains(popname,'L4') && ii==3  % VPM presynapses for L4
+                tsyni.(presynPops(ii)).fullSimulation{1} = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx)) + ...
+                    (model.([char(popname) '_' char(presynPops(ii+1)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx));
+            elseif contains(popname,'L4') && ii==4
+                ... % VPM will be detected twice, but it was already analysed in the upper condition
+            else
+                tsyni.(presynPops(ii)).fullSimulation{1} = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx));
+            end
+             
         else
-            if signal
-                synCurrent_preCut = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(1:cutStartTime-1,cell_idx));
-                synCurrent_postCut = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(cutStartTime:end,cell_idx));
-                tsyni.(presynPops(ii)).settlingTime = {synCurrent_preCut};
-                tsyni.(presynPops(ii)).simulationTime = {synCurrent_postCut};
+            tw = 1;
+            winStart = 1;
+            winEnd = length(model.time);
+            if contains(popname,'L4') && ii==3  % VPM presynapses for L4
+                tsyni.VPM.timeWindows{tw} = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx)) + ...
+                    (model.([char(popname) '_' char(presynPops(ii+1)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx));
+            elseif contains(popname,'L4') && ii==4
+                ... % VPM will be detected twice, but it was already analysed in the upper condition
             else
-                synCurrent_preCut = sum(model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(1:cutStartTime-1,cell_idx));
-                synCurrent_postCut = sum(model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(cutStartTime:end,cell_idx));
-                tsyni.(presynPops(ii)).settlingTime = synCurrent_preCut;
-                tsyni.(presynPops(ii)).simulationTime = synCurrent_postCut;
+                tsyni.(presynPops(ii)).timeWindows{tw} = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx));
             end
+            
         end
     end
 end

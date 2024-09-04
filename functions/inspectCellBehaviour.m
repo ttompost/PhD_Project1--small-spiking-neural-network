@@ -103,14 +103,20 @@ warning('off')
     end
     
     % get total synaptic input
+    % ... but first get time windows of interest
+    timeWindows = [model.time(1) cutStartTime]; % [start stop] in ms
+    tempAnalysis = analyzeSparseSim(model,'test');
+    popIdx = find(strcmp(tempAnalysis.Population, cellToInspect));
+    timeWindows = [timeWindows; cell2mat(cellfun(@(x) [x.PeakTime x.EndTime], tempAnalysis.VPMEventData{popIdx,1}, 'uniformoutput',0)')];
+    
     synapticInputs.faulty_not_spiking = []; synapticInputs.faulty_spiking = []; synapticInputs.healthy = [];
     for ii = 1:size(model.([cellToInspect '_V']),2)
         if ismember(ii,cellBehaviour.(cellToInspect).fns)
-            synapticInputs.faulty_not_spiking{end+1} = getTotalSynInput(model,cellToInspect,ii);
+            synapticInputs.faulty_not_spiking{end+1} = getTotalSynInput(model,cellToInspect,ii,timeWindows);
         elseif ismember(ii,cellBehaviour.(cellToInspect).fs)
-            synapticInputs.faulty_spiking{end+1} = getTotalSynInput(model,cellToInspect,ii);
+            synapticInputs.faulty_spiking{end+1} = getTotalSynInput(model,cellToInspect,ii,timeWindows);
         elseif ismember(ii,cellBehaviour.(cellToInspect).ht)
-            synapticInputs.healthy{end+1} = getTotalSynInput(model,cellToInspect,ii);
+            synapticInputs.healthy{end+1} = getTotalSynInput(model,cellToInspect,ii,timeWindows);
         end
     end
     
@@ -200,41 +206,170 @@ warning('off')
     end
     
     % total syn input sorted
-    tsyn_ht_pre_ExcPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.healthy{1, x}.(presynPops(3)).settlingTime,1:length(synapticInputs.healthy),'uniformoutput',false));
-    tsyn_ht_post_ExcPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.healthy{1, x}.(presynPops(3)).simulationTime,1:length(synapticInputs.healthy),'uniformoutput',false));
-    tsyn_fns_pre_ExcPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_not_spiking{1, x}.(presynPops(3)).settlingTime,1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false));
-    tsyn_fns_post_ExcPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_not_spiking{1, x}.(presynPops(3)).simulationTime,1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false));
-    tsyn_fs_pre_ExcPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_spiking{1, x}.(presynPops(3)).settlingTime,1:length(synapticInputs.faulty_spiking),'uniformoutput',false));
-    tsyn_fs_post_ExcPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_spiking{1, x}.(presynPops(3)).simulationTime,1:length(synapticInputs.faulty_spiking),'uniformoutput',false));
-
-    tsyn_ht_pre_ExcSameLayer = cell2mat(arrayfun(@(x) synapticInputs.healthy{1, x}.(presynPops(1)).settlingTime,1:length(synapticInputs.healthy),'uniformoutput',false));
-    tsyn_ht_post_ExcSameLayer = cell2mat(arrayfun(@(x) synapticInputs.healthy{1, x}.(presynPops(1)).simulationTime,1:length(synapticInputs.healthy),'uniformoutput',false));
-    tsyn_fns_pre_ExcSameLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_not_spiking{1, x}.(presynPops(1)).settlingTime,1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false));
-    tsyn_fns_post_ExcSameLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_not_spiking{1, x}.(presynPops(1)).simulationTime,1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false));
-    tsyn_fs_pre_ExcSameLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_spiking{1, x}.(presynPops(1)).settlingTime,1:length(synapticInputs.faulty_spiking),'uniformoutput',false));
-    tsyn_fs_post_ExcSameLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_spiking{1, x}.(presynPops(1)).simulationTime,1:length(synapticInputs.faulty_spiking),'uniformoutput',false));
-
-    tsyn_ht_pre_InhSameLayer = cell2mat(arrayfun(@(x) synapticInputs.healthy{1, x}.(presynPops(2)).settlingTime,1:length(synapticInputs.healthy),'uniformoutput',false));
-    tsyn_ht_post_InhSameLayer = cell2mat(arrayfun(@(x) synapticInputs.healthy{1, x}.(presynPops(2)).simulationTime,1:length(synapticInputs.healthy),'uniformoutput',false));
-    tsyn_fns_pre_InhSameLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_not_spiking{1, x}.(presynPops(2)).settlingTime,1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false));
-    tsyn_fns_post_InhSameLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_not_spiking{1, x}.(presynPops(2)).simulationTime,1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false));
-    tsyn_fs_pre_InhSameLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_spiking{1, x}.(presynPops(2)).settlingTime,1:length(synapticInputs.faulty_spiking),'uniformoutput',false));
-    tsyn_fs_post_InhSameLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_spiking{1, x}.(presynPops(2)).simulationTime,1:length(synapticInputs.faulty_spiking),'uniformoutput',false));
+    tsyn_ht_events_ExcPrevLayer = cell2mat(... % events
+        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.healthy{1, x}.(presynPops(3)).timeWindows(1, 2:length(timeWindows))))),...
+        1:length(synapticInputs.healthy),'uniformoutput',false)...
+        );
     
+    tsyn_ht_full_ExcPrevLayer = cell2mat(... % simulation without settling time
+        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(3)).fullSimulation{1, 1}),... % full simulation
+        1:length(synapticInputs.healthy),'uniformoutput',false)...
+        ) - cell2mat(...
+        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(3)).timeWindows{1, 1}),... % settling time
+        1:length(synapticInputs.healthy),'uniformoutput',false)...
+        );
+    
+    tsyn_fns_events_ExcPrevLayer = cell2mat(... % events
+        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_not_spiking{1, x}.(presynPops(3)).timeWindows(1, 2:length(timeWindows))))),...
+        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+        );
+    
+    tsyn_fns_full_ExcPrevLayer = cell2mat(... % simulation without settling time
+        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(3)).fullSimulation{1, 1}),... % full simulation
+        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+        ) - cell2mat(...
+        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(3)).timeWindows{1, 1}),... % settling time
+        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+        );
+    
+    tsyn_fs_events_ExcPrevLayer = cell2mat(... % events
+        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_spiking{1, x}.(presynPops(3)).timeWindows(1, 2:length(timeWindows))))),...
+        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+        );
+    
+    tsyn_fs_full_ExcPrevLayer = cell2mat(... % simulation without settling time
+        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(3)).fullSimulation{1, 1}),... % full simulation
+        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+        ) - cell2mat(...
+        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(3)).timeWindows{1, 1}),... % settling time
+        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+        );
+    %
+    tsyn_ht_events_ExcSameLayer = cell2mat(... % events
+        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.healthy{1, x}.(presynPops(1)).timeWindows(1, 2:length(timeWindows))))),...
+        1:length(synapticInputs.healthy),'uniformoutput',false)...
+        );
+    
+    tsyn_ht_full_ExcSameLayer = cell2mat(... % simulation without settling time
+        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(1)).fullSimulation{1, 1}),... % full simulation
+        1:length(synapticInputs.healthy),'uniformoutput',false)...
+        ) - cell2mat(...
+        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(1)).timeWindows{1, 1}),... % settling time
+        1:length(synapticInputs.healthy),'uniformoutput',false)...
+        );
+    
+    tsyn_fns_events_ExcSameLayer = cell2mat(... % events
+        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_not_spiking{1, x}.(presynPops(1)).timeWindows(1, 2:length(timeWindows))))),...
+        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+        );
+    
+    tsyn_fns_full_ExcSameLayer = cell2mat(... % simulation without settling time
+        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(1)).fullSimulation{1, 1}),... % full simulation
+        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+        ) - cell2mat(...
+        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(1)).timeWindows{1, 1}),... % settling time
+        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+        );
+    
+    tsyn_fs_events_ExcSameLayer = cell2mat(... % events
+        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_spiking{1, x}.(presynPops(1)).timeWindows(1, 2:length(timeWindows))))),...
+        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+        );
+    
+    tsyn_fs_full_ExcSameLayer = cell2mat(... % simulation without settling time
+        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(1)).fullSimulation{1, 1}),... % full simulation
+        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+        ) - cell2mat(...
+        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(1)).timeWindows{1, 1}),... % settling time
+        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+        );
+    %
+    tsyn_ht_events_InhSameLayer = cell2mat(... % events
+        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.healthy{1, x}.(presynPops(2)).timeWindows(1, 2:length(timeWindows))))),...
+        1:length(synapticInputs.healthy),'uniformoutput',false)...
+        );
+    
+    tsyn_ht_full_InhSameLayer = cell2mat(... % simulation without settling time
+        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(2)).fullSimulation{1, 1}),... % full simulation
+        1:length(synapticInputs.healthy),'uniformoutput',false)...
+        ) - cell2mat(...
+        arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(2)).timeWindows{1, 1}),... % settling time
+        1:length(synapticInputs.healthy),'uniformoutput',false)...
+        );
+    
+    tsyn_fns_events_InhSameLayer = cell2mat(... % events
+        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_not_spiking{1, x}.(presynPops(2)).timeWindows(1, 2:length(timeWindows))))),...
+        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+        );
+    
+    tsyn_fns_full_InhSameLayer = cell2mat(... % simulation without settling time
+        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(2)).fullSimulation{1, 1}),... % full simulation
+        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+        ) - cell2mat(...
+        arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(2)).timeWindows{1, 1}),... % settling time
+        1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+        );
+    
+    tsyn_fs_events_InhSameLayer = cell2mat(... % events
+        arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_spiking{1, x}.(presynPops(2)).timeWindows(1, 2:length(timeWindows))))),...
+        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+        );
+    
+    tsyn_fs_full_InhSameLayer = cell2mat(... % simulation without settling time
+        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(2)).fullSimulation{1, 1}),... % full simulation
+        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+        ) - cell2mat(...
+        arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(2)).timeWindows{1, 1}),... % settling time
+        1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+        );
+
+      
     if length(presynPops)==4
-        tsyn_ht_pre_InhPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.healthy{1, x}.(presynPops(4)).settlingTime,1:length(synapticInputs.healthy),'uniformoutput',false));
-        tsyn_ht_post_InhPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.healthy{1, x}.(presynPops(4)).simulationTime,1:length(synapticInputs.healthy),'uniformoutput',false));
-        tsyn_fns_pre_InhPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_not_spiking{1, x}.(presynPops(4)).settlingTime,1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false));
-        tsyn_fns_post_InhPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_not_spiking{1, x}.(presynPops(4)).simulationTime,1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false));
-        tsyn_fs_pre_InhPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_spiking{1, x}.(presynPops(4)).settlingTime,1:length(synapticInputs.faulty_spiking),'uniformoutput',false));
-        tsyn_fs_post_InhPrevLayer = cell2mat(arrayfun(@(x) synapticInputs.faulty_spiking{1, x}.(presynPops(4)).simulationTime,1:length(synapticInputs.faulty_spiking),'uniformoutput',false));
+        tsyn_ht_events_InhPrevLayer = cell2mat(... % events
+            arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.healthy{1, x}.(presynPops(4)).timeWindows(1, 2:length(timeWindows))))),...
+            1:length(synapticInputs.healthy),'uniformoutput',false)...
+            );
+
+        tsyn_ht_full_InhPrevLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(4)).fullSimulation{1, 1}),... % full simulation
+            1:length(synapticInputs.healthy),'uniformoutput',false)...
+            ) - cell2mat(...
+            arrayfun(@(x) trapz(synapticInputs.healthy{1, x}.(presynPops(4)).timeWindows{1, 1}),... % settling time
+            1:length(synapticInputs.healthy),'uniformoutput',false)...
+            );
+
+        tsyn_fns_events_InhPrevLayer = cell2mat(... % events
+            arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_not_spiking{1, x}.(presynPops(4)).timeWindows(1, 2:length(timeWindows))))),...
+            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+            );
+
+        tsyn_fns_full_InhPrevLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(4)).fullSimulation{1, 1}),... % full simulation
+            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+            ) - cell2mat(...
+            arrayfun(@(x) trapz(synapticInputs.faulty_not_spiking{1, x}.(presynPops(4)).timeWindows{1, 1}),... % settling time
+            1:length(synapticInputs.faulty_not_spiking),'uniformoutput',false)...
+            );
+
+        tsyn_fs_events_InhPrevLayer = cell2mat(... % events
+            arrayfun(@(x) sum(trapz(cell2mat(synapticInputs.faulty_spiking{1, x}.(presynPops(4)).timeWindows(1, 2:length(timeWindows))))),...
+            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+            );
+
+        tsyn_fs_full_InhPrevLayer = cell2mat(... % simulation without settling time
+            arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(4)).fullSimulation{1, 1}),... % full simulation
+            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+            ) - cell2mat(...
+            arrayfun(@(x) trapz(synapticInputs.faulty_spiking{1, x}.(presynPops(4)).timeWindows{1, 1}),... % settling time
+            1:length(synapticInputs.faulty_spiking),'uniformoutput',false)...
+            );
     else
-        tsyn_ht_pre_InhPrevLayer=[];
-        tsyn_ht_post_InhPrevLayer=[];
-        tsyn_fns_pre_InhPrevLayer=[];
-        tsyn_fns_post_InhPrevLayer=[];
-        tsyn_fs_pre_InhPrevLayer=[];
-        tsyn_fs_post_InhPrevLayer=[];
+        tsyn_ht_events_InhPrevLayer=[];
+        tsyn_ht_full_InhPrevLayer=[];
+        tsyn_fns_events_InhPrevLayer=[];
+        tsyn_fns_full_InhPrevLayer=[];
+        tsyn_fs_events_InhPrevLayer=[];
+        tsyn_fs_full_InhPrevLayer=[];
     end
     
     % plot another figure if the user wants
@@ -295,7 +430,7 @@ warning('off')
         else
             set(gca,'fontsize',14,'xticklabel',[presynPops(3) presynPops(1) presynPops(2) presynPops(4)])
         end
-        title({'Presynaptic connections'; ['per' cellToInspect 'cell type']})
+        title({'Presynaptic connections'; ['per ' cellToInspect ' cell type']})
         
         nexttile; hold on
         br1 = bar(1,faulty_ns_0presynInh1/length(presyn_InhSameLayer.faulty_not_spiking),'k','BarWidth',0.5,'EdgeColor','none','FaceAlpha',0.2);
@@ -400,29 +535,29 @@ warning('off')
         if length(presynPops)==4
             % settling time
             try % if there is only 1 fns, then boxplot gets confused and it groups all three tsyn as one, so then "'positions', [1 2 3]" throws an error
-                boxplot([tsyn_fns_pre_ExcPrevLayer; tsyn_fns_pre_ExcSameLayer; tsyn_fns_pre_InhSameLayer; tsyn_fns_pre_InhPrevLayer]','positions',[1 2 3 4],'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([tsyn_fns_events_ExcPrevLayer; tsyn_fns_events_ExcSameLayer; tsyn_fns_events_InhSameLayer; tsyn_fns_events_InhPrevLayer]','positions',[1 2 3 4],'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             catch ME
-                boxplot([[tsyn_fns_pre_ExcPrevLayer; tsyn_fns_pre_ExcSameLayer; tsyn_fns_pre_InhSameLayer; tsyn_fns_pre_InhPrevLayer]'; nan(1,4)],'positions',[1 2 3 4],'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([[tsyn_fns_events_ExcPrevLayer; tsyn_fns_events_ExcSameLayer; tsyn_fns_events_InhSameLayer; tsyn_fns_events_InhPrevLayer]'; nan(1,4)],'positions',[1 2 3 4],'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             end
             try
-                boxplot([tsyn_fs_pre_ExcPrevLayer; tsyn_fs_pre_ExcSameLayer; tsyn_fs_pre_InhSameLayer; tsyn_fs_pre_InhPrevLayer]','positions',[1 2 3 4]+5,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([tsyn_fs_events_ExcPrevLayer; tsyn_fs_events_ExcSameLayer; tsyn_fs_events_InhSameLayer; tsyn_fs_events_InhPrevLayer]','positions',[1 2 3 4]+5,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             catch ME
-                boxplot([[tsyn_fs_pre_ExcPrevLayer; tsyn_fs_pre_ExcSameLayer; tsyn_fs_pre_InhSameLayer; tsyn_fs_pre_InhPrevLayer]'; nan(1,4)],'positions',[1 2 3 4]+5,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([[tsyn_fs_events_ExcPrevLayer; tsyn_fs_events_ExcSameLayer; tsyn_fs_events_InhSameLayer; tsyn_fs_events_InhPrevLayer]'; nan(1,4)],'positions',[1 2 3 4]+5,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             end
-            boxplot([tsyn_ht_pre_ExcPrevLayer; tsyn_ht_pre_ExcSameLayer; tsyn_ht_pre_InhSameLayer; tsyn_ht_pre_InhPrevLayer]','positions',[1 2 3 4]+10,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+            boxplot([tsyn_ht_events_ExcPrevLayer; tsyn_ht_events_ExcSameLayer; tsyn_ht_events_InhSameLayer; tsyn_ht_events_InhPrevLayer]','positions',[1 2 3 4]+10,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
         elseif length(presynPops)==3
             % settling time
             try % if there is only 1 fns, then boxplot gets confused and it groups all three tsyn as one, so then "'positions', [1 2 3]" throws an error
-                boxplot([tsyn_fns_pre_ExcPrevLayer; tsyn_fns_pre_ExcSameLayer; tsyn_fns_pre_InhSameLayer]','positions',[1 2 3],'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([tsyn_fns_events_ExcPrevLayer; tsyn_fns_events_ExcSameLayer; tsyn_fns_events_InhSameLayer]','positions',[1 2 3],'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             catch ME
-                boxplot([[tsyn_fns_pre_ExcPrevLayer; tsyn_fns_pre_ExcSameLayer; tsyn_fns_pre_InhSameLayer]'; nan(1,3)],'positions',[1 2 3],'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([[tsyn_fns_events_ExcPrevLayer; tsyn_fns_events_ExcSameLayer; tsyn_fns_events_InhSameLayer]'; nan(1,3)],'positions',[1 2 3],'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             end
             try
-                boxplot([tsyn_fs_pre_ExcPrevLayer; tsyn_fs_pre_ExcSameLayer; tsyn_fs_pre_InhSameLayer]','positions',[1 2 3]+4,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([tsyn_fs_events_ExcPrevLayer; tsyn_fs_events_ExcSameLayer; tsyn_fs_events_InhSameLayer]','positions',[1 2 3]+4,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             catch ME
-                boxplot([[tsyn_fs_pre_ExcPrevLayer; tsyn_fs_pre_ExcSameLayer; tsyn_fs_pre_InhSameLayer]'; nan(1,3)],'positions',[1 2 3]+4,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([[tsyn_fs_events_ExcPrevLayer; tsyn_fs_events_ExcSameLayer; tsyn_fs_events_InhSameLayer]'; nan(1,3)],'positions',[1 2 3]+4,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             end
-            boxplot([tsyn_ht_pre_ExcPrevLayer; tsyn_ht_pre_ExcSameLayer; tsyn_ht_pre_InhSameLayer]','positions',[1 2 3]+8,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+            boxplot([tsyn_ht_events_ExcPrevLayer; tsyn_ht_events_ExcSameLayer; tsyn_ht_events_InhSameLayer]','positions',[1 2 3]+8,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
         end
         
         xlabel('Presynapse type')
@@ -459,34 +594,34 @@ warning('off')
                 end
             end
         end
-        title({'Total synaptic input (<100ms)'; ['per ' char(cellToInspect) ' cell']})
+        title({'Total synaptic input (Events)'; ['per ' char(cellToInspect) ' cell']})
 
         % simulation time
         nexttile; hold on;
         if length(presynPops)==3
             try
-                boxplot([tsyn_fns_post_ExcPrevLayer; tsyn_fns_post_ExcSameLayer; tsyn_fns_post_InhSameLayer]','positions',[1 2 3],'plotstyle','compact','boxstyle','filled','colors','k', 'medianstyle','line')
+                boxplot([tsyn_fns_full_ExcPrevLayer; tsyn_fns_full_ExcSameLayer; tsyn_fns_full_InhSameLayer]','positions',[1 2 3],'plotstyle','compact','boxstyle','filled','colors','k', 'medianstyle','line')
             catch ME
-                boxplot([[tsyn_fns_post_ExcPrevLayer; tsyn_fns_post_ExcSameLayer; tsyn_fns_post_InhSameLayer]'; nan(1,3)],'positions',[1 2 3],'plotstyle','compact','boxstyle','filled','colors','k', 'medianstyle','line')
+                boxplot([[tsyn_fns_full_ExcPrevLayer; tsyn_fns_full_ExcSameLayer; tsyn_fns_full_InhSameLayer]'; nan(1,3)],'positions',[1 2 3],'plotstyle','compact','boxstyle','filled','colors','k', 'medianstyle','line')
             end
             try
-                boxplot([tsyn_fs_post_ExcPrevLayer; tsyn_fs_post_ExcSameLayer; tsyn_fs_post_InhSameLayer]','positions',[1 2 3]+4,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([tsyn_fs_full_ExcPrevLayer; tsyn_fs_full_ExcSameLayer; tsyn_fs_full_InhSameLayer]','positions',[1 2 3]+4,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             catch ME
-                boxplot([[tsyn_fs_post_ExcPrevLayer; tsyn_fs_post_ExcSameLayer; tsyn_fs_post_InhSameLayer]'; nan(1,3)],'positions',[1 2 3]+4,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([[tsyn_fs_full_ExcPrevLayer; tsyn_fs_full_ExcSameLayer; tsyn_fs_full_InhSameLayer]'; nan(1,3)],'positions',[1 2 3]+4,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             end
-            boxplot([tsyn_ht_post_ExcPrevLayer; tsyn_ht_post_ExcSameLayer; tsyn_ht_post_InhSameLayer]','positions',[1 2 3]+8,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+            boxplot([tsyn_ht_full_ExcPrevLayer; tsyn_ht_full_ExcSameLayer; tsyn_ht_full_InhSameLayer]','positions',[1 2 3]+8,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
         else
             try
-                boxplot([tsyn_fns_post_ExcPrevLayer; tsyn_fns_post_ExcSameLayer; tsyn_fns_post_InhSameLayer; tsyn_fns_post_InhPrevLayer]','positions',[1 2 3 4],'plotstyle','compact','boxstyle','filled','colors','k', 'medianstyle','line')
+                boxplot([tsyn_fns_full_ExcPrevLayer; tsyn_fns_full_ExcSameLayer; tsyn_fns_full_InhSameLayer; tsyn_fns_full_InhPrevLayer]','positions',[1 2 3 4],'plotstyle','compact','boxstyle','filled','colors','k', 'medianstyle','line')
             catch ME
-                boxplot([[tsyn_fns_post_ExcPrevLayer; tsyn_fns_post_ExcSameLayer; tsyn_fns_post_InhSameLayer; tsyn_fns_post_InhPrevLayer]'; nan(1,4)],'positions',[1 2 3 4],'plotstyle','compact','boxstyle','filled','colors','k', 'medianstyle','line')
+                boxplot([[tsyn_fns_full_ExcPrevLayer; tsyn_fns_full_ExcSameLayer; tsyn_fns_full_InhSameLayer; tsyn_fns_full_InhPrevLayer]'; nan(1,4)],'positions',[1 2 3 4],'plotstyle','compact','boxstyle','filled','colors','k', 'medianstyle','line')
             end
             try
-                boxplot([tsyn_fs_post_ExcPrevLayer; tsyn_fs_post_ExcSameLayer; tsyn_fs_post_InhSameLayer; tsyn_fs_post_InhPrevLayer]','positions',[1 2 3 4]+5,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([tsyn_fs_full_ExcPrevLayer; tsyn_fs_full_ExcSameLayer; tsyn_fs_full_InhSameLayer; tsyn_fs_full_InhPrevLayer]','positions',[1 2 3 4]+5,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             catch ME
-                boxplot([[tsyn_fs_post_ExcPrevLayer; tsyn_fs_post_ExcSameLayer; tsyn_fs_post_InhSameLayer; tsyn_fs_post_InhPrevLayer]'; nan(1,4)],'positions',[1 2 3 4]+5,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+                boxplot([[tsyn_fs_full_ExcPrevLayer; tsyn_fs_full_ExcSameLayer; tsyn_fs_full_InhSameLayer; tsyn_fs_full_InhPrevLayer]'; nan(1,4)],'positions',[1 2 3 4]+5,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
             end
-            boxplot([tsyn_ht_post_ExcPrevLayer; tsyn_ht_post_ExcSameLayer; tsyn_ht_post_InhSameLayer; tsyn_ht_post_InhPrevLayer]','positions',[1 2 3 4]+10,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
+            boxplot([tsyn_ht_full_ExcPrevLayer; tsyn_ht_full_ExcSameLayer; tsyn_ht_full_InhSameLayer; tsyn_ht_full_InhPrevLayer]','positions',[1 2 3 4]+10,'plotstyle','compact','boxstyle','filled','colors','k','medianstyle','line')
         end
         xlabel('Presynapse type')
         ylabel('Current (pA)')
@@ -522,7 +657,7 @@ warning('off')
                 end
             end
         end
-        title({'Total synaptic input (>100ms)'; ['per ' char(cellToInspect) ' cell']})
+        title({'Total synaptic input (Full excl.'; ['settling time) per ' char(cellToInspect) ' cell']})
     end
     
     cb = table({sim_tag;sim_tag;sim_tag},{'FNS';'FS';'HT'},...
@@ -543,17 +678,17 @@ warning('off')
         {presyn_ExcSameLayer.faulty_not_spiking(presyn_InhPrevLayer.faulty_not_spiking==0);presyn_ExcSameLayer.faulty_spiking(presyn_InhPrevLayer.faulty_spiking==0);presyn_ExcSameLayer.healthy(presyn_InhPrevLayer.healthy==0)},...
         {presyn_ExcPrevLayer.faulty_not_spiking(presyn_InhPrevLayer.faulty_not_spiking~=0);presyn_ExcPrevLayer.faulty_spiking(presyn_InhPrevLayer.faulty_spiking~=0);presyn_ExcPrevLayer.healthy(presyn_InhPrevLayer.healthy~=0)},...
         {presyn_ExcSameLayer.faulty_not_spiking(presyn_InhPrevLayer.faulty_not_spiking~=0);presyn_ExcSameLayer.faulty_spiking(presyn_InhPrevLayer.faulty_spiking~=0);presyn_ExcSameLayer.healthy(presyn_InhPrevLayer.healthy~=0)},...
-        {tsyn_fns_pre_ExcPrevLayer;tsyn_fs_pre_ExcPrevLayer;tsyn_ht_pre_ExcPrevLayer},...
-        {tsyn_fns_pre_ExcSameLayer;tsyn_fs_pre_ExcSameLayer;tsyn_ht_pre_ExcSameLayer},...
-        {tsyn_fns_pre_InhSameLayer;tsyn_fs_pre_InhSameLayer;tsyn_ht_pre_InhSameLayer},...
-        {tsyn_fns_pre_InhPrevLayer;tsyn_fs_pre_InhPrevLayer;tsyn_ht_pre_InhPrevLayer},...
-        {tsyn_fns_post_ExcPrevLayer;tsyn_fs_post_ExcPrevLayer;tsyn_ht_post_ExcPrevLayer},...
-        {tsyn_fns_post_ExcSameLayer;tsyn_fs_post_ExcSameLayer;tsyn_ht_post_ExcSameLayer},...
-        {tsyn_fns_post_InhSameLayer;tsyn_fs_post_InhSameLayer;tsyn_ht_post_InhSameLayer},...
-        {tsyn_fns_post_InhPrevLayer;tsyn_fs_post_InhPrevLayer;tsyn_ht_post_InhPrevLayer},...
+        {tsyn_fns_events_ExcPrevLayer;tsyn_fs_events_ExcPrevLayer;tsyn_ht_events_ExcPrevLayer},...
+        {tsyn_fns_events_ExcSameLayer;tsyn_fs_events_ExcSameLayer;tsyn_ht_events_ExcSameLayer},...
+        {tsyn_fns_events_InhSameLayer;tsyn_fs_events_InhSameLayer;tsyn_ht_events_InhSameLayer},...
+        {tsyn_fns_events_InhPrevLayer;tsyn_fs_events_InhPrevLayer;tsyn_ht_events_InhPrevLayer},...
+        {tsyn_fns_full_ExcPrevLayer;tsyn_fs_full_ExcPrevLayer;tsyn_ht_full_ExcPrevLayer},...
+        {tsyn_fns_full_ExcSameLayer;tsyn_fs_full_ExcSameLayer;tsyn_ht_full_ExcSameLayer},...
+        {tsyn_fns_full_InhSameLayer;tsyn_fs_full_InhSameLayer;tsyn_ht_full_InhSameLayer},...
+        {tsyn_fns_full_InhPrevLayer;tsyn_fs_full_InhPrevLayer;tsyn_ht_full_InhPrevLayer},...
         'variablenames',{'sim_tag','behaviour_type','example_cell','cell_count','cell_idx','ExcPrevLayer_conns','ExcSameLayer_conns','InhSameLayer_conns','InhPrevLayer_conns',...
         'noInhSame','noInhPrev','ExcPrevLayer_conns_in_noInhSame','ExcSameLayer_conns_in_noInhSame', 'ExcPrevLayer_conns_in_withInhSame','ExcSameLayer_conns_in_withInhSame',...
         'ExcPrevLayer_conns_in_noInhPrev','ExcSameLayer_conns_in_noInhPrev', 'ExcPrevLayer_conns_in_withInhPrev','ExcSameLayer_conns_in_withInhPrev',...
-        'totalSyn_ExcPrevLayer_pre','totalSyn_ExcSameLayer_pre','totalSyn_InhSameLayer_pre','totalSyn_InhPrevLayer_pre',...
-        'totalSyn_ExcPrevLayer_post','totalSyn_ExcSameLayer_post','totalSyn_InhSameLayer_post','totalSyn_InhPrevLayer_post'});
+        'totalSyn_ExcPrevLayer_events','totalSyn_ExcSameLayer_events','totalSyn_InhSameLayer_events','totalSyn_InhPrevLayer_events',...
+        'totalSyn_ExcPrevLayer_fullExclSetlling','totalSyn_ExcSameLayer_fullExclSetlling','totalSyn_InhSameLayer_fullExclSetlling','totalSyn_InhPrevLayer_fullExclSetlling'});
 end
