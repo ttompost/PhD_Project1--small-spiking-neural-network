@@ -44,7 +44,7 @@ function tsyni = getTotalSynInput(model,popname,cell_idx,timewindows)
             winStart = 1;
             winEnd = length(model.time);
             if contains(popname,'L4') && ii==3  % VPM presynapses for L4
-                tsyni.(presynPops(ii)).fullSimulation{1} = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx)) + ...
+                tsyni.VPM.fullSimulation{1} = (model.([char(popname) '_' char(presynPops(ii)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx)) + ...
                     (model.([char(popname) '_' char(presynPops(ii+1)) '_' currentType '_' currentMonitor])(winStart:winEnd,cell_idx));
             elseif contains(popname,'L4') && ii==4
                 ... % VPM will be detected twice, but it was already analysed in the upper condition
