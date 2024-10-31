@@ -110,13 +110,61 @@ warning('off')
     timeWindows = [timeWindows; cell2mat(cellfun(@(x) [x.PeakTime x.EndTime], tempAnalysis.VPMEventData{popIdx,1}, 'uniformoutput',0)')];
     
     synapticInputs.faulty_not_spiking = []; synapticInputs.faulty_spiking = []; synapticInputs.healthy = [];
+    mem_pot.faulty_not_spiking = []; mem_pot.faulty_spiking = []; mem_pot.healthy = [];
+    first_spikes.faulty_not_spiking = []; first_spikes.faulty_spiking = []; first_spikes.healthy = [];
+    STA.faulty_not_spiking = []; STA.faulty_spiking = []; STA.healthy = [];
+
     for ii = 1:size(model.([cellToInspect '_V']),2)
         if ismember(ii,cellBehaviour.(cellToInspect).fns)
             synapticInputs.faulty_not_spiking{end+1} = getTotalSynInput(model,cellToInspect,ii,timeWindows);
+
+            % get vm
+            mem_pot.faulty_not_spiking{end+1} = arrayfun(@(x) model.([cellToInspect '_V'])([find(model.time == timeWindows(x,1)):find(model.time == timeWindows(x,2))], ii), 2:size(timeWindows, 1), 'UniformOutput',0);
+            
+            % 1st spike
+            first_spikes.faulty_not_spiking{end+1} = arrayfun(@(x) tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}, 1:length(tempAnalysis.VPMEventData{popIdx,1}), 'UniformOutput',0);
+
+            % STA
+            STA.faulty_not_spiking{end+1} = arrayfun(@(x) model.([cellToInspect '_V'])([find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, x}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii} - 60)) :...
+                find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, x}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}))], ii) ...
+                .* ~isempty(tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}),... % multiply with 0 (no spike) or 1 (spike) as control
+                1:length(tempAnalysis.VPMEventData{popIdx,1}), 'UniformOutput',0);
+
         elseif ismember(ii,cellBehaviour.(cellToInspect).fs)
             synapticInputs.faulty_spiking{end+1} = getTotalSynInput(model,cellToInspect,ii,timeWindows);
+
+            % get vm
+            mem_pot.faulty_spiking{end+1} = arrayfun(@(x) model.([cellToInspect '_V'])([find(model.time == timeWindows(x,1)):find(model.time == timeWindows(x,2))], ii), 1:size(timeWindows, 1), 'UniformOutput',0);
+
+            % 1st spike
+            first_spikes.faulty_spiking{end+1} = arrayfun(@(x) tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}, 1:length(tempAnalysis.VPMEventData{popIdx,1}), 'UniformOutput',0);
+
+            % STA
+            STA.faulty_spiking{end+1} = arrayfun(@(x) model.([cellToInspect '_V'])([find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, x}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii} - 60)) :...
+                find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, x}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}))], ii) ...
+                .* ~isempty(tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}),... % multiply with 0 (no spike) or 1 (spike) as control
+                1:length(tempAnalysis.VPMEventData{popIdx,1}), 'UniformOutput',0);
+
         elseif ismember(ii,cellBehaviour.(cellToInspect).ht)
             synapticInputs.healthy{end+1} = getTotalSynInput(model,cellToInspect,ii,timeWindows);
+
+            % get vm
+            mem_pot.healthy{end+1} = arrayfun(@(x) model.([cellToInspect '_V'])([find(model.time == timeWindows(x,1)):find(model.time == timeWindows(x,2))], ii), 1:size(timeWindows, 1), 'UniformOutput',0);
+
+            % 1st spike
+            first_spikes.healthy{end+1} = arrayfun(@(x) tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}, 1:length(tempAnalysis.VPMEventData{popIdx,1}), 'UniformOutput',0);
+
+            % STA
+            areThereSpikes = cell2mat(cellfun(@(x) ~isempty(x), first_spikes.healthy{end}, 'UniformOutput',0));
+            if any(areThereSpikes)
+                theseEventsSpike = find(areThereSpikes);
+                for spk_idx = theseEventsSpike
+                    STA.healthy{end+1}{spk_idx} = model.([cellToInspect '_V'])([find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.FirstSpikeLatency{1, ii} - 60)) :...
+                        find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.FirstSpikeLatency{1, ii}))], ii);
+                end
+            else
+                STA.healthy{end+1} = [];
+            end
         end
     end
     
@@ -713,11 +761,15 @@ warning('off')
         {tsyn_fns_full_ExcSameLayer;tsyn_fs_full_ExcSameLayer;tsyn_ht_full_ExcSameLayer},...
         {tsyn_fns_full_InhSameLayer;tsyn_fs_full_InhSameLayer;tsyn_ht_full_InhSameLayer},...
         {tsyn_fns_full_InhPrevLayer;tsyn_fs_full_InhPrevLayer;tsyn_ht_full_InhPrevLayer},...
+        {mem_pot.faulty_not_spiking;mem_pot.faulty_spiking;mem_pot.healthy},...
+        {first_spikes.faulty_not_spiking;first_spikes.faulty_spiking;first_spikes.healthy},...
+        {STA.faulty_not_spiking;STA.faulty_spiking;STA.healthy},...
         'variablenames',{'sim_tag','behaviour_type','example_cell','cell_count','cell_idx','ExcPrevLayer_conns','ExcSameLayer_conns','InhSameLayer_conns','InhPrevLayer_conns',...
         'noInhSame','noInhPrev','ExcPrevLayer_conns_in_noInhSame','ExcSameLayer_conns_in_noInhSame', 'ExcPrevLayer_conns_in_withInhSame','ExcSameLayer_conns_in_withInhSame',...
         'ExcPrevLayer_conns_in_noInhPrev','ExcSameLayer_conns_in_noInhPrev', 'ExcPrevLayer_conns_in_withInhPrev','ExcSameLayer_conns_in_withInhPrev',...
         'totalSyn_ExcPrevLayer_events','totalSyn_ExcSameLayer_events','totalSyn_InhSameLayer_events','totalSyn_InhPrevLayer_events',...
-        'totalSyn_ExcPrevLayer_fullExclSetlling','totalSyn_ExcSameLayer_fullExclSetlling','totalSyn_InhSameLayer_fullExclSetlling','totalSyn_InhPrevLayer_fullExclSetlling'});
+        'totalSyn_ExcPrevLayer_fullExclSetlling','totalSyn_ExcSameLayer_fullExclSetlling','totalSyn_InhSameLayer_fullExclSetlling','totalSyn_InhPrevLayer_fullExclSetlling',...
+        'Vm', 'first_spike_latency', 'STA_vm'});
 end
 
 function r = IntegrateEventsSeparately_PerNeuron(neuronData, presynName)

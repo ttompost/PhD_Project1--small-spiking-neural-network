@@ -1,8 +1,7 @@
-function p = pcolor_fleur(x,y,z)
+function p = pcolor_fleur(x,y,z,ax)
 % Same as pcolor, but than x and y are the middle of the columns/rows, not
 % the edges
-
-
+    
 lx = length(x);
 ly = length(y);
 
@@ -22,5 +21,9 @@ newy(ly+1) = y(ly)+(y(ly)-y(ly-1))/2;
 
 z = padarray(z,[1 1],'replicate','post');
 
-p = pcolor(newx, newy, z);
+if ~exist('ax', 'var')
+    p = pcolor(newx, newy, z);
+else
+    p = pcolor(ax, newx, newy, z);
+end
 
