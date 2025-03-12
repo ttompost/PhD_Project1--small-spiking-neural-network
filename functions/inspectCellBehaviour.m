@@ -125,10 +125,21 @@ warning('off')
             first_spikes.faulty_not_spiking{end+1} = arrayfun(@(x) tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}, 1:length(tempAnalysis.VPMEventData{popIdx,1}), 'UniformOutput',0);
 
             % STA
-            STA.faulty_not_spiking{end+1} = arrayfun(@(x) model.([cellToInspect '_V'])([find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, x}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii} - 60)) :...
-                find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, x}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}))], ii) ...
-                .* ~isempty(tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}),... % multiply with 0 (no spike) or 1 (spike) as control
-                1:length(tempAnalysis.VPMEventData{popIdx,1}), 'UniformOutput',0);
+            areThereSpikes = cell2mat(cellfun(@(x) ~isempty(x), first_spikes.faulty_not_spiking{end}, 'UniformOutput',0));
+            STA_signals = [];
+            if any(areThereSpikes)
+                for spk_idx = 1:length(areThereSpikes)
+                    if areThereSpikes(spk_idx)
+                        STA_signals{spk_idx} = model.([cellToInspect '_V'])([find(round(model.time,2) == round(tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.FirstSpikeLatency{1, ii} - 60,2)) :...
+                            find(round(model.time,2) == round(tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.FirstSpikeLatency{1, ii},2))], ii);
+                    else
+                        STA_signals{spk_idx} = [];
+                    end
+                end
+                STA.faulty_not_spiking{end+1} = STA_signals;
+            else
+                STA.faulty_not_spiking{end+1} = repmat({[]}, 1, length(areThereSpikes));
+            end
 
         elseif ismember(ii,cellBehaviour.(cellToInspect).fs)
             synapticInputs.faulty_spiking{end+1} = getTotalSynInput(model,cellToInspect,ii,timeWindows);
@@ -140,10 +151,21 @@ warning('off')
             first_spikes.faulty_spiking{end+1} = arrayfun(@(x) tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}, 1:length(tempAnalysis.VPMEventData{popIdx,1}), 'UniformOutput',0);
 
             % STA
-            STA.faulty_spiking{end+1} = arrayfun(@(x) model.([cellToInspect '_V'])([find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, x}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii} - 60)) :...
-                find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, x}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}))], ii) ...
-                .* ~isempty(tempAnalysis.VPMEventData{popIdx,1}{1, x}.FirstSpikeLatency{1, ii}),... % multiply with 0 (no spike) or 1 (spike) as control
-                1:length(tempAnalysis.VPMEventData{popIdx,1}), 'UniformOutput',0);
+            areThereSpikes = cell2mat(cellfun(@(x) ~isempty(x), first_spikes.faulty_spiking{end}, 'UniformOutput',0));
+            STA_signals = [];
+            if any(areThereSpikes)
+                for spk_idx = 1:length(areThereSpikes)
+                    if areThereSpikes(spk_idx)
+                        STA_signals{spk_idx} = model.([cellToInspect '_V'])([find(round(model.time,2) == round(tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.FirstSpikeLatency{1, ii} - 60,2)) :...
+                            find(round(model.time,2) == round(tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.FirstSpikeLatency{1, ii},2))], ii);
+                    else
+                        STA_signals{spk_idx} = [];
+                    end
+                end
+                STA.faulty_spiking{end+1} = STA_signals;
+            else
+                STA.faulty_spiking{end+1} = repmat({[]}, 1, length(areThereSpikes));
+            end
 
         elseif ismember(ii,cellBehaviour.(cellToInspect).ht)
             synapticInputs.healthy{end+1} = getTotalSynInput(model,cellToInspect,ii,timeWindows);
@@ -156,14 +178,19 @@ warning('off')
 
             % STA
             areThereSpikes = cell2mat(cellfun(@(x) ~isempty(x), first_spikes.healthy{end}, 'UniformOutput',0));
+            STA_signals = [];
             if any(areThereSpikes)
-                theseEventsSpike = find(areThereSpikes);
-                for spk_idx = theseEventsSpike
-                    STA.healthy{end+1}{spk_idx} = model.([cellToInspect '_V'])([find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.FirstSpikeLatency{1, ii} - 60)) :...
-                        find(model.time == (tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.FirstSpikeLatency{1, ii}))], ii);
+                for spk_idx = 1:length(areThereSpikes)
+                    if areThereSpikes(spk_idx)
+                        STA_signals{spk_idx} = model.([cellToInspect '_V'])([find(round(model.time,2) == round(tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.FirstSpikeLatency{1, ii} - 60,2)) :...
+                            find(round(model.time,2) == round(tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.PeakTime + tempAnalysis.VPMEventData{popIdx,1}{1, spk_idx}.FirstSpikeLatency{1, ii},2))], ii);
+                    else
+                        STA_signals{spk_idx} = [];
+                    end
                 end
+                STA.healthy{end+1} = STA_signals;
             else
-                STA.healthy{end+1} = [];
+                STA.healthy{end+1} = repmat({[]}, 1, length(areThereSpikes));
             end
         end
     end
