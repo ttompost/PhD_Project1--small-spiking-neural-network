@@ -1,4 +1,4 @@
-function [out1, out2] = plotPsthAndRaster(WhichPlot, SpikeTimes, BinSize, EndTime, PlotOrNot, Col)
+function [out1, out2] = plotPsthAndRaster(WhichPlot, SpikeTimes, BinSize, times, PlotOrNot, Col)
 % This function plots psth and/or rasterplots with input arguments:
     % WhichPlot: 'psth', 'raster'
     % SpikeTimes are in miliseconds
@@ -8,6 +8,14 @@ function [out1, out2] = plotPsthAndRaster(WhichPlot, SpikeTimes, BinSize, EndTim
     
 % Optional
     % Col is a color to be used while plotting
+    if length(times) == 1
+        StartTime = 0;
+        EndTime = times;
+    elseif length(times) == 2
+        StartTime = times(1);
+        EndTime = times(2);
+    end
+       
     
     if nargin < 5
         disp('Not enough input arguments')
@@ -17,7 +25,7 @@ function [out1, out2] = plotPsthAndRaster(WhichPlot, SpikeTimes, BinSize, EndTim
     if iscell(SpikeTimes)
       for c_idx = 1:length(SpikeTimes)
           this_cell = SpikeTimes{1,c_idx};
-          [psth_count(c_idx,:), psth_edges(c_idx,:)] = histcounts(this_cell,0:BinSize:EndTime);
+          [psth_count(c_idx,:), psth_edges(c_idx,:)] = histcounts(this_cell,StartTime:BinSize:EndTime);
       end
     else 
         error('Only cell arrays with spike times per neuron are accepted for now.')
@@ -46,7 +54,7 @@ function [out1, out2] = plotPsthAndRaster(WhichPlot, SpikeTimes, BinSize, EndTim
                   if size(yVar,1) ~= 1
                       yVar = yVar';
                   end
-                  line([xVar; xVar], [yVar + (c_idx - 1); yVar + c_idx],'color',Col, 'linestyle','-','marker','none','linewidth',3)
+                  line([xVar; xVar], [yVar + (c_idx - 1); yVar + c_idx],'color',Col, 'linestyle','-','marker','none','linewidth',1)
               end
           end
           out1 = [];

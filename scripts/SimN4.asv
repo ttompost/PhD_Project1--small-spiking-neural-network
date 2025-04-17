@@ -147,19 +147,19 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
 
     % connect populations in L2 layer 
     L2.connections(1).direction='L2E->L2E'; % E to E
-    L2.connections(end).mechanism_list={'iAMPA_temp'};
+    L2.connections(end).mechanism_list={'iAMPA'};
     L2.connections(end).parameters={'gAMPA',gAMPA,'netcon',l2EEnetcon,'IC',IC};
 
     L2.connections(end+1).direction='L2E->L2I'; % E to I
-    L2.connections(end).mechanism_list={'iAMPA_temp'};
+    L2.connections(end).mechanism_list={'iAMPA'};
     L2.connections(end).parameters={'gAMPA',gAMPA,'netcon',l2EInetcon,'IC',IC}; 
 
     L2.connections(end+1).direction='L2I->L2E'; % I to E
-    L2.connections(end).mechanism_list={'iGABAa_temp'};
+    L2.connections(end).mechanism_list={'iGABAa'};
     L2.connections(end).parameters={'gGABA',gGABAa,'netcon',l2IEnetcon,'IC',IC,'tauD',tauD_GABAa, 'EGABAa',EGABAa}; 
 
     L2.connections(end+1).direction='L2I->L2I'; % I to I
-    L2.connections(end).mechanism_list={'iGABAa_temp'};
+    L2.connections(end).mechanism_list={'iGABAa'};
     L2.connections(end).parameters={'gGABA',gGABAa,'netcon',l2IInetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
     L2=dsCheckSpecification(L2); 
 
@@ -185,19 +185,19 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
 
     % connect populations in L3 layer 
     L3.connections(1).direction='L3E->L3E'; % E to E
-    L3.connections(end).mechanism_list={'iAMPA_temp'};
+    L3.connections(end).mechanism_list={'iAMPA'};
     L3.connections(end).parameters={'gAMPA',gAMPA,'netcon',l3EEnetcon,'IC',IC};
 
     L3.connections(end+1).direction='L3E->L3I'; % E to I
-    L3.connections(end).mechanism_list={'iAMPA_temp'};
+    L3.connections(end).mechanism_list={'iAMPA'};
     L3.connections(end).parameters={'gAMPA',gAMPA,'netcon',l3EInetcon,'IC',IC}; 
 
     L3.connections(end+1).direction='L3I->L3E'; % I to E
-    L3.connections(end).mechanism_list={'iGABAa_temp'};
+    L3.connections(end).mechanism_list={'iGABAa'};
     L3.connections(end).parameters={'gGABA',gGABAa,'netcon',l3IEnetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
 
     L3.connections(end+1).direction='L3I->L3I'; % I to I
-    L3.connections(end).mechanism_list={'iGABAa_temp'};
+    L3.connections(end).mechanism_list={'iGABAa'};
     L3.connections(end).parameters={'gGABA',gGABAa,'netcon',l3IInetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
     L3=dsCheckSpecification(L3); 
 
@@ -224,19 +224,19 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
 
     % connect populations in L4 layer 
     L4.connections(1).direction='L4E->L4E'; % E to E
-    L4.connections(end).mechanism_list={'iAMPA_temp'};
+    L4.connections(end).mechanism_list={'iAMPA'};
     L4.connections(end).parameters={'gAMPA',gAMPA,'netcon',l4EEnetcon,'IC',IC};
 
     L4.connections(end+1).direction='L4E->L4I'; % E to I
-    L4.connections(end).mechanism_list={'iAMPA_temp'};
+    L4.connections(end).mechanism_list={'iAMPA'};
     L4.connections(end).parameters={'gAMPA',gAMPA,'netcon',l4EInetcon,'IC',IC}; 
 
     L4.connections(end+1).direction='L4I->L4E'; % I to E
-    L4.connections(end).mechanism_list={'iGABAa_temp'};
+    L4.connections(end).mechanism_list={'iGABAa'};
     L4.connections(end).parameters={'gGABA',gGABAa,'netcon',l4IEnetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
 
     L4.connections(end+1).direction='L4I->L4I'; % I to I
-    L4.connections(end).mechanism_list={'iGABAa_temp'};
+    L4.connections(end).mechanism_list={'iGABAa'};
     L4.connections(end).parameters={'gGABA',gGABAa,'netcon',l4IInetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
     L4=dsCheckSpecification(L4); 
 
@@ -283,11 +283,11 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
         % add feedforward connections (th->l4; l4->l3; l3->l2)
             % thalamic to l4
         Network.connections(end+1).direction='VPM->L4E'; % ThE to l4E
-        Network.connections(end).mechanism_list={'iAMPA_temp'};
+        Network.connections(end).mechanism_list={'iAMPA'};
         Network.connections(end).parameters={'gAMPA',gAMPA_th,'netcon',thl4EEnetcon, 'IC', IC};
 
         Network.connections(end+1).direction='VPM->L4I'; % ThE to l4I
-        Network.connections(end).mechanism_list={'iAMPA_temp'};
+        Network.connections(end).mechanism_list={'iAMPA'};
         Network.connections(end).parameters={'gAMPA',gAMPA_th,'netcon',thl4EInetcon, 'IC', IC}; 
 
     else
@@ -320,7 +320,7 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
         VPMuncorr.connections(end).parameters={'g_esyn_uncorr',vpmParams(5)*1.5,...
                                         'uncorr_rate',vpmParams(3),...
                                         'uncorr_prob_cxn',vpmParams(4),...
-                                        'T',endSim,'jitter_stddev_corr',5/simulation_dt,'tau_i_uncorr',25};
+                                        'T',endSim,'jitter_stddev_corr',500,'tau_i_uncorr',25};
 
         VPMcorr.populations(1).name='VPMcorr'; 
         VPMcorr.populations(end).size=vpmNum1;
@@ -335,7 +335,7 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
         VPMcorr.connections(end).parameters={'g_esyn_corr',vpmParams(5),...
                                         'corr_rate',vpmParams(1),...
                                         'corr_prob_cxn',vpmParams(2),...
-                                        'T',endSim,'jitter_stddev_corr',5/simulation_dt,'tau_i_corr',14};
+                                        'T',endSim,'jitter_stddev_corr',500,'tau_i_corr',14};
 
         VPMcorr=dsCheckSpecification(VPMcorr); 
         VPMuncorr=dsCheckSpecification(VPMuncorr); 
@@ -354,19 +354,19 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
         % add feedforward connections (th->l4; l4->l3; l3->l2)
             % thalamic to l4
         Network.connections(end+1).direction='VPMcorr->L4E'; % ThE to l4E
-        Network.connections(end).mechanism_list={'iAMPA_temp'};
+        Network.connections(end).mechanism_list={'iAMPA'};
         Network.connections(end).parameters={'gAMPA',gAMPA_th,'netcon',thl4EEnetcon1,'IC',IC};
 
         Network.connections(end+1).direction='VPMcorr->L4I'; % ThE to l4I
-        Network.connections(end).mechanism_list={'iAMPA_temp'};
+        Network.connections(end).mechanism_list={'iAMPA'};
         Network.connections(end).parameters={'gAMPA',gAMPA_th,'netcon',thl4EInetcon1,'IC',IC}; 
 
         Network.connections(end+1).direction='VPMuncorr->L4E'; % ThE to l4E
-        Network.connections(end).mechanism_list={'iAMPA_temp'};
+        Network.connections(end).mechanism_list={'iAMPA'};
         Network.connections(end).parameters={'gAMPA',gAMPA_th,'netcon',thl4EEnetcon2,'IC',IC};
 
         Network.connections(end+1).direction='VPMuncorr->L4I'; % ThE to l4I
-        Network.connections(end).mechanism_list={'iAMPA_temp'};
+        Network.connections(end).mechanism_list={'iAMPA'};
         Network.connections(end).parameters={'gAMPA',gAMPA_th,'netcon',thl4EInetcon2,'IC',IC};
 
         %     % thalamic to l3
@@ -374,11 +374,11 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
         % thl3EInetcon=ConnMx(0,'trans','none',vpmNum1,l3i_num,(ConnMxParam('thl4i','pconn', pconn_e)*corr_contribution)/2,ConnMxParam('thl4i','nb', pconn_e)/2,1); % corr    
         % 
         % Network.connections(end+1).direction='VPMcorr->L3E'; % ThE to l4E
-        % Network.connections(end).mechanism_list={'iAMPA_temp'};
+        % Network.connections(end).mechanism_list={'iAMPA'};
         % Network.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_th,'netcon',thl3EEnetcon,'IC',IC};
         %  
         % Network.connections(end+1).direction='VPMcorr->L3I'; % ThE to l4I
-        % Network.connections(end).mechanism_list={'iAMPA_temp'};
+        % Network.connections(end).mechanism_list={'iAMPA'};
         % Network.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_th,'netcon',thl3EInetcon,'IC',IC}; 
     end
 
@@ -394,32 +394,32 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
 
         % l4 to l23 (l4 to l3)
     Network.connections(end+1).direction='L4E->L3E'; % l4E to l3E
-    Network.connections(end).mechanism_list={'iAMPA_temp'};
+    Network.connections(end).mechanism_list={'iAMPA'};
     Network.connections(end).parameters={'gAMPA',gAMPA,'netcon',l4l3EEnetcon,'IC',IC};
 
     Network.connections(end+1).direction='L4E->L3I'; % l4E to l3I
-    Network.connections(end).mechanism_list={'iAMPA_temp'};
+    Network.connections(end).mechanism_list={'iAMPA'};
     Network.connections(end).parameters={'gAMPA',gAMPA,'netcon',l4l3EInetcon,'IC',IC};
 
     Network.connections(end+1).direction='L4I->L3E'; % l4I to l3E
-    Network.connections(end).mechanism_list={'iGABAa_temp'};
+    Network.connections(end).mechanism_list={'iGABAa'};
     Network.connections(end).parameters={'gGABA',gGABAa,'netcon',l4l3IEnetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
 
         % l23 to l23 feedforward (l3 to l2)
     Network.connections(end+1).direction='L3E->L2E'; % l3E to l2E
-    Network.connections(end).mechanism_list={'iAMPA_temp'};
+    Network.connections(end).mechanism_list={'iAMPA'};
     Network.connections(end).parameters={'gAMPA',gAMPA,'netcon',l3l2EEnetcon,'IC',IC}; 
 
     Network.connections(end+1).direction='L3E->L2I'; % l3E to l2I
-    Network.connections(end).mechanism_list={'iAMPA_temp'};
+    Network.connections(end).mechanism_list={'iAMPA'};
     Network.connections(end).parameters={'gAMPA',gAMPA,'netcon',l3l2EInetcon,'IC',IC};
 
     Network.connections(end+1).direction='L3I->L2E'; % l3I to l2E
-    Network.connections(end).mechanism_list={'iGABAa_temp'};
+    Network.connections(end).mechanism_list={'iGABAa'};
     Network.connections(end).parameters={'gGABA',gGABAa,'netcon',l3l2IEnetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
 
     Network.connections(end+1).direction='L3I->L2I'; % l3I to l2I
-    Network.connections(end).mechanism_list={'iGABAa_temp'};
+    Network.connections(end).mechanism_list={'iGABAa'};
     Network.connections(end).parameters={'gGABA',gGABAa,'netcon',l3l2IInetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
 
     Network=dsCheckSpecification(Network); 

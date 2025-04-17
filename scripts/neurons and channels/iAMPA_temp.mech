@@ -6,21 +6,22 @@ tauD = [2]
 tauR = [0.2]
 IC = [0.1]
 IC_noise = [0]
-x_shift = 0 % added Tompos 20 Jul 2023
-slope=10
+temp_switch = 0
  
 % fixed variables
 netcon = ones(N_pre,N_post)
 
 % functions
-IAMPA(X,s) = -gAMPA.*(s*netcon).*(X-EAMPA)
+IAMPA(X,s) = -gAMPA.*(s*netcon).*(X-EAMPA) * temp_switch
  
 % ODEs and ICs
-s' = -s./tauD + 1/2*(1+tanh((X_pre+x_shift)/slope)).*((1-s)/tauR)
+s' = -s./tauD + 1/2*(1+tanh(X_pre/10)).*((1-s)/tauR)
 s(0) = IC+IC_noise.*rand(1,N_pre)
+
+if(k<100/dt)(temp_switch = 0)
+if(k>=100/dt)(temp_switch = 1)
 
 monitor IAMPA % always record the synaptic current
  
 % linkers
 @current += IAMPA(X_post,s)
- 
