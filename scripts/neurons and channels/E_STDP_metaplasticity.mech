@@ -2,37 +2,74 @@
 % the synapse expresses STDP
 % the STDP change initialy impacts W but extends its influence on P
 
-% AMPA synapse
+% AMPA synaptic parameters
+gAmpa = [0.1]       % mS/cm2, maximal conductance
+EAMPA = [0]         % mV, reversal potential
+tauAMPAr = [0.2]   
+tauAMPAd = [2]
+IC = [0]
+IC_noise = [0]
 
-% NMDA synapse
+% NMDA Synaptic parameters and auxiliary functions (see Methods in Neuronal Modeling, Chapter 1)
+gNmda = [.1]        % mS/cm2, maximal conductance
+ENMDA = [0]         % mV, reversal potential
+tauNMDAd = 125 
+tauNMDAr = 3.76 
+Tmax = 1            % mM, maximal transmitter concentration
+Vpp = [2]           % mV
+Kp = [5] 
+NT(X) = Tmax./(1+exp(-(X-Vpp)/Kp)) 		 % sigmoidal neurotransmitter concentration [T] increasing rapidly to Tmax with presynaptic voltage above 0mV (i.e., Vpre spike)
+MgBlock(X) = 1./(1+0.33*exp(-0.06*X))  % .33 sigmoidal Magnesium block for NMDA synapse
 
-% connectivity
+% Network Connectivity
+N_syn=1
+netcon=ones(N_pre, N_post) % default connectivity matrix is all-to-all
+mat_Nd=zeros(N_pre,N_post,N_syn)
+mat_Nd(:,:,1) = netcon
+
+% Presynaptic spike detection
+sAMPA' = -sAMPA./tauAMPAd + 1/2.*(1+tanh(X_pre/10)).*((1-sAMPA)/tauAMPAr)
+sAMPA(0) = IC+IC_noise.*rand(N_pre,1, N_syn)
+sNMDA' = NT(X_pre).*(1-sNMDA)/tauNMDAr-sNMDA/tauNMDAd 	% first-order kinetics for two-state (open/closed) scheme. [s]=fraction of receptors in open state
+sNMDA(0) = IC+IC_noise*rand(N_pre,1, N_syn)
+
+% Synaptic conductance and currents
+g_ampa(sAMPA) = gAmpa.*sAMPA
+g_nmda(sNMDA) = gNmda.*sNMDA
+
+IAMPA(X,W,sAMPA) = g_ampa(sAMPA)*sum((w.*mat_Nd),N_syn).*(X-EAMPA)
+INMDA(X,sNMDA)   = g_nmda(sNMDA)*sum((w_nmda.*mat_Nd),N_syn).*(X-ENMDA).*MgBlock(X)
 
 % STDP
+taux=5
+tauy=5
+wmax=5
+IC_w=1
+w_nmda=IC_w
+rx=0.5
+ry=0.5
+alpha=10
+delay_pre=0
+delay_post=0
 
+heavyside_theta = @(x) double(x>0)
 
-gAMPA = [0.1]
-EAMPA = [0]
-tauD = [2]
-tauR = [0.2]
-IC = [0.1]
-IC_noise = [0]
-temp_switch = 0
- 
-% fixed variables
-netcon = ones(N_pre,N_post)
+ax(x)=(1-x).*alpha % incremental increase in presynaptic trace with nearest-neighbor spike-interaction
+ay(y)=(1-y).*alpha % incremental increase in postsynaptic trace
+Ax(w)=heavyside_theta(wmax-w)*rx % hard bounds
+Ay(w)=w*ry      % soft bounds
+detection_interval = 1.1*dt
+dx/dt=-x./taux+ax(x).*sum((t-tspike_pre-delay_pre)<detection_interval)
+dy/dt=-y./tauy+ay(y).*sum((t-tspike_post-delay_post)<detection_interval)
 
-% functions
-IAMPA(X,s) = -gAMPA.*(s*netcon).*(X-EAMPA) * temp_switch
- 
-% ODEs and ICs
-s' = -s./tauD + 1/2*(1+tanh(X_pre/10)).*((1-s)/tauR)
-s(0) = IC+IC_noise.*rand(1,N_pre)
+% this is the template from here: http://www.scholarpedia.org/article/Spike-timing_dependent_plasticity
+%dw/dt=Ax(w).*x.*sum((t-tspike_post-delay_post)<detection_interval) - Ay(w).*y.*sum((t-tspike_pre-delay_pre)<detection_interval)
+%x(0)=.1; y(0)=.1; w(0)=IC_w+IC_noise.*rand(N_pre,N_post)
 
-if(k<100/dt)(temp_switch = 0)
-if(k>=100/dt)(temp_switch = 1)
+dw/dt=Ax(w).*repmat(x,[1, Npost, N_syn]).*repmat(sum((t-tspike_post-delay_post)<detection_interval),[Npre 1 N_syn]) - Ay(w).*repmat(y,[Npre 1 N_syn]).*repmat(sum((t-tspike_pre-delay_pre)<detection_interval),[1,Npost,N_syn])
+x(0)=0.*ones(N_pre,1,N_syn); 
+y(0)=0.*ones(1,N_post,N_syn); 
+w(0)=IC_w.*ones(N_pre,N_post,N_syn)
 
-monitor IAMPA % always record the synaptic current
- 
-% linkers
-@current += IAMPA(X_post,s)
+monitor ay,Ax,Ay % functions
+@current += -IAMPA(X_post,w,sAMPA)-INMDA(X_post,sNMDA)
