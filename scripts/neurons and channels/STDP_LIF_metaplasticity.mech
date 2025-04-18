@@ -1,5 +1,4 @@
-% excitatory synaptic current is a composite signal of AMPA and NMDA activation
-% the synapse expresses STDP
+% excitatory AMPA synapse expresses STDP
 % the STDP change initialy impacts W but extends its influence on P
 
 % AMPA synaptic parameters

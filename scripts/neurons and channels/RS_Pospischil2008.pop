@@ -7,5 +7,8 @@ vm_shift = 0;
 Iapp = 0;
 Cm=1; % uF/cm2
 
+thresh = 30
+monitor V.spikes(thresh)
+
 %%% REFERENCE
 % Pospischil, Martin, Maria Toledo-Rodriguez, Cyril Monier, Zuzanna Piwkowska, Thierry Bal, Yves Frégnac, Henry Markram, and Alain Destexhe. “Minimal Hodgkin–Huxley Type Models for Different Classes of Cortical and Thalamic Neurons.” Biological Cybernetics 99, no. 4 (November 1, 2008): 427–41. https://doi.org/10.1007/s00422-008-0263-8.
