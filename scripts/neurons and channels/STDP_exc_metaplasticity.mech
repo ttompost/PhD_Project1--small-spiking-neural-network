@@ -3,11 +3,11 @@
 % the STDP change initialy impacts W but extends its influence on P
 
 % AMPA synaptic parameters
-gAmpa = [0.1]       % mS/cm2, maximal conductance
+gAmpa = 0.1       % mS/cm2, maximal conductance
 EAMPA = [0]         % mV, reversal potential
 tauAMPAr = [0.2]   
-tauAMPAd = [2]
-IC = [0]
+tauAMPAd = [4]
+IC = 0.01
 IC_noise = [0]
 
 % NMDA Synaptic parameters and auxiliary functions (see Methods in Neuronal Modeling, Chapter 1)
@@ -24,21 +24,19 @@ MgBlock(X) = 1./(1+0.33*exp(-0.06*X))  % .33 sigmoidal Magnesium block for NMDA 
 % Network Connectivity
 N_syn=1
 netcon=ones(N_pre, N_post) % default connectivity matrix is all-to-all
-mat_Nd=zeros(N_pre,N_post,N_syn)
-mat_Nd(:,:,1) = netcon
 
-% Presynaptic spike detection
-sAMPA' = -sAMPA./tauAMPAd + 1/2.*(1+tanh(X_pre/10)).*((1-sAMPA)/tauAMPAr)
-sAMPA(0) = IC+IC_noise.*rand(N_pre,1, N_syn)
+% Presynaptic spike detection (this is for Hodgkin-Huxley neurons)
+sAMPA' = -sAMPA./tauAMPAd + 1/2*(1+tanh(X_pre/10)).*((1-sAMPA)/tauAMPAr)
+sAMPA(0) = IC+IC_noise.*rand(1,N_pre)
 sNMDA' = NT(X_pre).*(1-sNMDA)/tauNMDAr-sNMDA/tauNMDAd 	% first-order kinetics for two-state (open/closed) scheme. [s]=fraction of receptors in open state
-sNMDA(0) = IC+IC_noise*rand(N_pre,1, N_syn)
+sNMDA(0) = IC+IC_noise.*rand(1,N_pre)
 
 % Synaptic conductance and currents
 g_ampa(sAMPA) = gAmpa.*sAMPA
 g_nmda(sNMDA) = gNmda.*sNMDA
 
-IAMPA(X,W,sAMPA) = g_ampa(sAMPA)*sum((w.*mat_Nd),N_syn).*(X-EAMPA)
-INMDA(X,sNMDA)   = g_nmda(sNMDA)*sum((w_nmda.*mat_Nd),N_syn).*(X-ENMDA).*MgBlock(X)
+IAMPA(X,w,sAMPA) = g_ampa(sAMPA)*(w.*netcon).*(X-EAMPA)
+INMDA(X,sNMDA)   = g_nmda(sNMDA)*(w_nmda.*netcon).*(X-ENMDA).*MgBlock(X)
 
 % STDP
 taux=5
@@ -46,19 +44,19 @@ tauy=5
 wmax=5
 IC_w=1
 w_nmda=IC_w
-rx=0.5
-ry=0.5
-alpha=10
+rx=0.5 % LTP step
+ry=0.5 % LTD step
+alpha=20 % memory amplitude modulation
 delay_pre=0
 delay_post=0
 
 heavyside_theta = @(x) double(x>0)
 
-ax(x)=(1-x).*alpha % incremental increase in presynaptic trace with nearest-neighbor spike-interaction
-ay(y)=(1-y).*alpha % incremental increase in postsynaptic trace
-Ax(w)=heavyside_theta(wmax-w)*rx % hard bounds
+ax(x)=((1-x) + x/taux).*alpha % incremental increase in presynaptic trace with nearest-neighbor spike-interaction
+ay(y)=((1-y) + y/tauy).*alpha % incremental increase in postsynaptic trace
+Ax(w)=heavyside_theta(wmax-w).*rx % hard bounds
 Ay(w)=w*ry      % soft bounds
-detection_interval = 1.1*dt
+detection_interval = 1.5*dt
 dx/dt=-x./taux+ax(x).*sum((t-tspike_pre-delay_pre)<detection_interval)
 dy/dt=-y./tauy+ay(y).*sum((t-tspike_post-delay_post)<detection_interval)
 
@@ -66,10 +64,10 @@ dy/dt=-y./tauy+ay(y).*sum((t-tspike_post-delay_post)<detection_interval)
 %dw/dt=Ax(w).*x.*sum((t-tspike_post-delay_post)<detection_interval) - Ay(w).*y.*sum((t-tspike_pre-delay_pre)<detection_interval)
 %x(0)=.1; y(0)=.1; w(0)=IC_w+IC_noise.*rand(N_pre,N_post)
 
-dw/dt=Ax(w).*repmat(x,[1, Npost, N_syn]).*repmat(sum((t-tspike_post-delay_post)<detection_interval),[Npre 1 N_syn]) - Ay(w).*repmat(y,[Npre 1 N_syn]).*repmat(sum((t-tspike_pre-delay_pre)<detection_interval),[1,Npost,N_syn])
-x(0)=0.*ones(N_pre,1,N_syn); 
-y(0)=0.*ones(1,N_post,N_syn); 
-w(0)=IC_w.*ones(N_pre,N_post,N_syn)
+dw/dt=Ax(w).*repmat(x,[N_post,1])'.*repmat(sum((t-tspike_post-delay_post)<detection_interval),[N_pre, 1]) - Ay(w).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre-delay_pre)<detection_interval),[N_post,1])'
+x(0)=zeros(1,N_pre); 
+y(0)=zeros(1,N_post); 
+w(0)=IC_w.*ones(N_pre,N_post)
 
-monitor ay,Ax,Ay % functions
+monitor IAMPA, INMDA % functions
 @current += -IAMPA(X_post,w,sAMPA)-INMDA(X_post,sNMDA)
