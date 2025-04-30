@@ -20,7 +20,7 @@ dz/dt = -z / tauAMPAr + sum( (t - tspike_pre > 0) .* exp(-(t - tspike_pre)/tauAM
 dsAMPA/dt = (z - sAMPA) / tauAMPAd
 
 % note, i translated: f(x) = 1*(exp(-x/tauD) - exp(-x/tauR)) .* (x > 0)) 
-% into the code above using an itermediate variable z
+% into the code above using an itermediate variable z.
 % translating a function into a differential equation means that the diff will be integrated
 % at every time point while solving the ODE system. this will result in linear growth of the
 % diff, so -- you have to include the decaying term. (z grows, sAMPA decays)

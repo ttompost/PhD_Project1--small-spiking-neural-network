@@ -22,17 +22,17 @@ function [out1, out2] = plotPsthAndRaster(WhichPlot, SpikeTimes, BinSize, times,
         return
     end
     
-    if iscell(SpikeTimes)
-      for c_idx = 1:length(SpikeTimes)
-          this_cell = SpikeTimes{1,c_idx};
-          [psth_count(c_idx,:), psth_edges(c_idx,:)] = histcounts(this_cell,StartTime:BinSize:EndTime);
-      end
-    else 
+    if ~iscell(SpikeTimes)
         error('Only cell arrays with spike times per neuron are accepted for now.')
     end
 
    switch WhichPlot
       case 'psth'
+          for c_idx = 1:length(SpikeTimes)
+              this_cell = SpikeTimes{1,c_idx};
+              [psth_count(c_idx,:), psth_edges(c_idx,:)] = histcounts(this_cell,StartTime:BinSize:EndTime);
+          end
+
           out1 = [sum(psth_count,1) 0];
           out2 = psth_edges(1,:);
           if PlotOrNot

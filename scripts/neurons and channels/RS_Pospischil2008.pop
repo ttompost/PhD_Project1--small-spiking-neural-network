@@ -2,8 +2,9 @@
 % usage: dsPlot(dsSimulate('RS','vary',{'RS','Iapp',5}))
 
 RS:
-dV/dt=(Iapp+@current)./Cm; {iNa_Pospischil2008,iKD_Pospischil2008,iM_Pospischil2008,ileak}@current; V(0)=(-65+vm_shift)*ones(1,N_pop)
-vm_shift = 0;
+dV/dt=(Iapp+@current)./Cm; {iNa_Pospischil2008,iKD_Pospischil2008,iM_Pospischil2008,ileak}@current; V(0)=V_rest.*ones(1,N_pop)
+
+V_rest = -65;
 Iapp = 0;
 Cm=1; % uF/cm2
 
