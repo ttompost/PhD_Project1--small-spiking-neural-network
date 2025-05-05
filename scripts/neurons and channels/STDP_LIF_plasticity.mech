@@ -10,7 +10,6 @@ IC = 0
 IC_noise = [0]
 
 % Network Connectivity
-N_syn=1
 netcon=ones(N_pre, N_post) % default connectivity matrix is all-to-all
 
 % Fast rise phase (timescale tauAMPAr)
@@ -53,6 +52,7 @@ ay(y)=(1-y).*alpha % incremental increase in postsynaptic trace
 Ax(w)=heavyside_theta(wmax-w).*rx % hard bounds
 Ay(w)=w*ry      % soft bounds
 detection_interval = 1.1*dt
+
 dx/dt=-x./taux+ax(x).*sum((t-tspike_pre-delay_pre)<detection_interval)
 dy/dt=-y./tauy+ay(y).*sum((t-tspike_post-delay_post)<detection_interval)
 
