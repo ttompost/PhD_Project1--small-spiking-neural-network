@@ -6,20 +6,19 @@ tauD = [10]
 tauR = [0.2]
 IC = [0.1]
 IC_noise = [0]
-temp_switch = 0
+
+settling_time = 0 % ms
+temp_switch = @(x) double(x>=settling_time)
 
 % fixed variables
 netcon = ones(N_pre,N_post)
 
 % functions
-IGABAa(X,s) = -gGABAa.*(s*netcon).*(X-EGABAa) * temp_switch
+IGABAa(X,s) = -gGABAa.*(s*netcon).*(X-EGABAa) .*temp_switch(t)
  
 % ODEs and ICs
 s' = -s./tauD + 1/2*(1+tanh(X_pre/10)).*((1-s)/tauR)
 s(0) = IC+IC_noise.*rand(1,N_pre)
-
-if(k<100/dt)(temp_switch = 0)
-if(k>=100/dt)(temp_switch = 1)
 
 monitor IGABAa % always record the synaptic current
  
