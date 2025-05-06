@@ -6,6 +6,9 @@ EAMPA = [0]         % mV, reversal potential
 tauAMPAr = [0.2]   
 tauAMPAd = [4]
 
+settling_time = 0 % ms
+temp_switch = @(x) double(x>=settling_time)
+
 % Network Connectivity
 netcon=ones(N_pre, N_post) % default connectivity matrix is all-to-all
 
@@ -71,7 +74,7 @@ dxSyn1/dt = -(1/taux_r + 1/taux_d) * xSyn1 + alpha_x/(taux_d - taux_r) * sum( (t
 dwSyn1/dt=Ax(wSyn1).*repmat(xSyn1,[N_post,1])'.*repmat(sum((t-tspike_post-delay_post)<detection_interval),[N_pre, 1]) - Ay(wSyn1).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre-delaySyn1_pre)<detection_interval),[N_post,1])'
     
     % Postsynaptic current
-IAMPAsyn1(X,wSyn1,sAMPA1) = g_syn(sAMPA1)*(wSyn1.*netcon).*(X-EAMPA)
+IAMPAsyn1(X,wSyn1,sAMPA1) = g_syn(sAMPA1)*(wSyn1.*netcon).*(X-EAMPA) .* temp_switch(t)
 
 
 monitor IAMPAsyn1

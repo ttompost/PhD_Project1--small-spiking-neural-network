@@ -7,6 +7,9 @@ EAMPA = [0]         % mV, reversal potential
 tauAMPAr = [0.2]   
 tauAMPAd = [4]
 
+settling_time = 0 % ms
+temp_switch = @(x) double(x>=settling_time)
+
 % Network Connectivity
 netcon=ones(N_pre, N_post) % default connectivity matrix is all-to-all
 
@@ -81,7 +84,7 @@ dxSyn1/dt = -(1/taux_r + 1/taux_d) * xSyn1 + alpha_x/(taux_d - taux_r) * sum( (t
 dwSyn1/dt=Ax(wSyn1).*repmat(xSyn1,[N_post,1])'.*repmat(sum((t-tspike_post-delay_post)<detection_interval),[N_pre, 1]) - Ay(wSyn1).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre-delaySyn1_pre)<detection_interval),[N_post,1])'
     
     % Postsynaptic current
-IAMPAsyn1(X,wSyn1,sAMPA1) = g_syn(sAMPA1)*(wSyn1.*double(sum(netcon1,1)~=0)).*(X-EAMPA)
+IAMPAsyn1(X,wSyn1,sAMPA1) = g_syn(sAMPA1)*(wSyn1.*double(sum(netcon1,1)~=0)).*(X-EAMPA) .* temp_switch(t)
 
 % (2) First added layer
     % Presynaptic memory trace
@@ -91,7 +94,7 @@ dxSyn2/dt = -(1/taux_r + 1/taux_d) * xSyn2 + alpha_x/(taux_d - taux_r) * sum( (t
 dwSyn2/dt=Ax(wSyn2).*repmat(xSyn2,[N_post,1])'.*repmat(sum((t-tspike_post-delay_post)<detection_interval),[N_pre, 1]) - Ay(wSyn2).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre-delaySyn2_pre)<detection_interval),[N_post,1])'
 
     % Postsynaptic current
-IAMPAsyn2(X,wSyn2,sAMPA2) = g_syn(sAMPA2)*(wSyn2.*double(sum(netcon2,1)~=0)).*(X-EAMPA) %
+IAMPAsyn2(X,wSyn2,sAMPA2) = g_syn(sAMPA2)*(wSyn2.*double(sum(netcon2,1)~=0)).*(X-EAMPA) .* temp_switch(t)
 
 % Track the synapse formation and elimination
 dnetcon1/dt = (netcon1.*netcon)>0
@@ -99,15 +102,15 @@ dnetcon2/dt = (netcon2.*netcon)>0
 
 % Conditions: btw, the brackets are in order (if)(then)(else)
     % synapse formation
-if(wSyn1.*netcon>=wmax & sum(netcon2,1)==0)(wSyn2=newSynW, netcon2=1, disp('formed second')) % if a new synapse was added, start from its initial W
+if(wSyn1.*netcon>=wmax & sum(netcon2,3)==0)(wSyn2=newSynW, netcon2=1, disp('formed second')) % if a new synapse was added, start from its initial W
 
     % synapse elimination
 if(wSyn2.*netcon<=0.01 & wSyn2.*netcon>0 & netcon2>0)(netcon2=0, disp('eliminated second'))
 if(wSyn1.*netcon<=0.01 & wSyn1.*netcon>0 & netcon1>0)(netcon1=0, disp('eliminated first'))
 
     % synapse reformation
-if(wSyn1.*netcon>=wmax & sum(netcon2,1)>0 & netcon2==0)(wSyn2=newSynW, netcon2=1, disp('reformed second'))
-if(wSyn1.*netcon>=wmax & sum(netcon1,1)>0 & netcon1==0)(wSyn1=newSynW, netcon1=1, disp('reformed first'))
+if(wSyn1.*netcon>=wmax & sum(netcon2,3)>0 & netcon2==0)(wSyn2=newSynW, netcon2=1, disp('reformed second'))
+if(wSyn1.*netcon>=wmax & sum(netcon1,3)>0 & netcon1==0)(wSyn1=newSynW, netcon1=1, disp('reformed first'))
 
 
 monitor IAMPAsyn1, IAMPAsyn2
