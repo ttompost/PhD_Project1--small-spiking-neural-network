@@ -61,10 +61,10 @@ alpha = (tauGABAad - tauGABAar) / peak_unscaled * (tauGABAar + tauGABAad) / (tau
 
 % Shared functions
 heavyside_theta = @(x) double(x>0)
-g_syn(s) = gAmpa.*(s)
+g_syn = @(s) gAmpa.*(s)
 
-Ax(w)=heavyside_theta(wmax-w).*rx % hard bounds
-Ay(w)=w*ry      % soft bounds
+Ax = @(w) heavyside_theta(wmax-w).*rx % hard bounds
+Ay = @(w) w*ry      % soft bounds
 detection_interval = 10*dt
 
 % Postsynaptic trace
@@ -80,7 +80,7 @@ dsGABAa2/dt = -(1/tauGABAar + 1/tauGABAad) * sGABAa2 + alpha/(tauGABAad - tauGAB
 dxSyn1/dt = -(1/taux_r + 1/taux_d) * xSyn1 + alpha_x/(taux_d - taux_r) * sum( (t - tspike_pre - delaySyn1_pre > 0) .* ( exp(-(t - tspike_pre - delaySyn1_pre)/taux_d) - exp(-(t - tspike_pre - delaySyn1_pre)/taux_r) ) );
 
     % Weight change
-dwSyn1/dt=Ax(wSyn1).*repmat(xSyn1,[N_post,1])'.*repmat(sum((t-tspike_post-delay_post)<detection_interval),[N_pre, 1]) + Ay(wSyn1).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre-delaySyn1_pre)<detection_interval),[N_post,1])'
+dwSyn1/dt=Ax(wSyn1).*repmat(xSyn1,[N_post,1])'.*repmat(sum((t-tspike_post)<detection_interval),[N_pre, 1]) + Ay(wSyn1).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre)<detection_interval),[N_post,1])'
     
     % Postsynaptic current
 IGABAasyn1(X,wSyn1,sGABAa1) = g_syn(sGABAa1)*(wSyn1.*double(netcon1>0)).*(X-EGABAa).* temp_switch(t)
@@ -90,7 +90,7 @@ IGABAasyn1(X,wSyn1,sGABAa1) = g_syn(sGABAa1)*(wSyn1.*double(netcon1>0)).*(X-EGAB
 dxSyn2/dt = -(1/taux_r + 1/taux_d) * xSyn2 + alpha_x/(taux_d - taux_r) * sum( (t - tspike_pre - delaySyn2_pre > 0) .* ( exp(-(t - tspike_pre - delaySyn2_pre)/taux_d) - exp(-(t - tspike_pre - delaySyn2_pre)/taux_r) ) );
 
     % Weight change
-dwSyn2/dt=Ax(wSyn2).*repmat(xSyn2,[N_post,1])'.*repmat(sum((t-tspike_post-delay_post)<detection_interval),[N_pre, 1]) + Ay(wSyn2).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre-delaySyn2_pre)<detection_interval),[N_post,1])'
+dwSyn2/dt=Ax(wSyn2).*repmat(xSyn2,[N_post,1])'.*repmat(sum((t-tspike_post)<detection_interval),[N_pre, 1]) + Ay(wSyn2).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre)<detection_interval),[N_post,1])'
 
     % Postsynaptic current
 IGABAasyn2(X,wSyn2,sGABAa2) = g_syn(sGABAa2)*(wSyn2.*double(netcon2>0)).*(X-EGABAa) .* temp_switch(t)

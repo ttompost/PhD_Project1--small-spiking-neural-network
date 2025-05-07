@@ -89,12 +89,12 @@ dMean_AMPA/dt = (IAMPAsyn1(X,wSyn1,sAMPA1) - Mean_AMPA) / tau_avg;
 dMean_GABA/dt = (@IGABAasyn1 - Mean_GABA) / tau_avg;
 
 % E-I balance ratio (smoothed)
-ei_balance = (Mean_AMPA + eps) ./ (Mean_GABA + eps);
+B = (Mean_AMPA + eps) ./ (Mean_GABA + eps);
 
 ei_balance'=( mean(IAMPAsyn1(X,wSyn1,sAMPA1) + eps,1) ./ mean(@IGABAasyn1 + eps,1) - ei_balance ) / tau_balance;
 
 
-monitor IAMPAsyn1, B
+monitor IAMPAsyn1
 @current += -IAMPAsyn1(X_post,wSyn1,sAMPA1)
 
 % expose IAMPAsyn1 for E-I balance calculation
