@@ -75,9 +75,9 @@ dxSyn1/dt = -(1/taux_r + 1/taux_d) * xSyn1 + alpha_x/(taux_d - taux_r) * sum( (t
 dwSyn1/dt=Ax(wSyn1).*repmat(xSyn1,[N_post,1])'.*repmat(sum((t-tspike_post)<detection_interval),[N_pre, 1]) + Ay(wSyn1).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre)<detection_interval),[N_post,1])'
     
     % Postsynaptic current
-IGABAasyn1(X,wSyn1,sGABAa1) = g_syn(sGABAa1)*(wSyn1.*netcon).*(X-EGABAa) .* temp_switch(t)
+IGABAasyn1(X,wSyn1,sGABAa1) = -g_syn(sGABAa1)*(wSyn1.*netcon).*(X-EGABAa) .* temp_switch(t)
 
 
 monitor IGABAasyn1
-@current += -IGABAasyn1(X_post,wSyn1,sGABAa1)
-@IGABAasyn1 += IGABAasyn1(X_post,wSyn1,sGABAa1)
+@current += IGABAasyn1(X_post,wSyn1,sGABAa1)
+@IGABAasyn += IGABAasyn1(X_post,wSyn1,sGABAa1)

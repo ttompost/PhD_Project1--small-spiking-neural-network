@@ -83,7 +83,7 @@ dxSyn1/dt = -(1/taux_r + 1/taux_d) * xSyn1 + alpha_x/(taux_d - taux_r) * sum( (t
 dwSyn1/dt=Ax(wSyn1).*repmat(xSyn1,[N_post,1])'.*repmat(sum((t-tspike_post)<detection_interval),[N_pre, 1]) + Ay(wSyn1).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre)<detection_interval),[N_post,1])'
     
     % Postsynaptic current
-IGABAasyn1(X,wSyn1,sGABAa1) = g_syn(sGABAa1)*(wSyn1.*double(netcon1>0)).*(X-EGABAa).* temp_switch(t)
+IGABAasyn1(X,wSyn1,sGABAa1) = -g_syn(sGABAa1)*(wSyn1.*double(netcon1>0)).*(X-EGABAa).* temp_switch(t)
 
 % (2) First added layer
     % Presynaptic memory trace
@@ -93,7 +93,7 @@ dxSyn2/dt = -(1/taux_r + 1/taux_d) * xSyn2 + alpha_x/(taux_d - taux_r) * sum( (t
 dwSyn2/dt=Ax(wSyn2).*repmat(xSyn2,[N_post,1])'.*repmat(sum((t-tspike_post)<detection_interval),[N_pre, 1]) + Ay(wSyn2).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre)<detection_interval),[N_post,1])'
 
     % Postsynaptic current
-IGABAasyn2(X,wSyn2,sGABAa2) = g_syn(sGABAa2)*(wSyn2.*double(netcon2>0)).*(X-EGABAa) .* temp_switch(t)
+IGABAasyn2(X,wSyn2,sGABAa2) = -g_syn(sGABAa2)*(wSyn2.*double(netcon2>0)).*(X-EGABAa) .* temp_switch(t)
 
 % Track the synapse formation and elimination
 dnetcon1/dt = (netcon1.*netcon)>0
@@ -118,4 +118,5 @@ if((wSyn1.*netcon)>=wmax & netcon1==0 & netcon==1)(wSyn1=newSynW, netcon1=1, dis
 
 
 monitor IGABAasyn1, IGABAasyn2
-@current += -IGABAasyn1(X_post,wSyn1,sGABAa1)-IGABAasyn2(X_post,wSyn2,sGABAa2)
+@current += IGABAasyn1(X_post,wSyn1,sGABAa1) + IGABAasyn2(X_post,wSyn2,sGABAa2)
+@IGABAasyn += IGABAasyn1(X_post,wSyn1,sGABAa1) + IGABAasyn2(X_post,wSyn2,sGABAa2)

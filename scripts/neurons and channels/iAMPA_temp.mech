@@ -24,3 +24,4 @@ monitor IAMPA % always record the synaptic current
  
 % linkers
 @current += IAMPA(X_post,s)
+@IAMPAsyn += IAMPA(X_post,s)

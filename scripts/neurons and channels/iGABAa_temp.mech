@@ -24,4 +24,5 @@ monitor IGABAa % always record the synaptic current
  
 % linkers
 @current += IGABAa(X_post,s)
+@IGABAasyn += IGABAa(X_post,s)
 
