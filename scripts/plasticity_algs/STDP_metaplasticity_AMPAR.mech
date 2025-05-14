@@ -1,7 +1,7 @@
 % excitatory AMPA synapse expresses STDP
 
 % AMPA synaptic parameters
-gAmpa = 0.1       % mS/cm2, maximal conductance
+gAMPA = 0.1       % mS/cm2, maximal conductance
 EAMPA = [0]         % mV, reversal potential
 tauAMPAr = [0.2]   
 tauAMPAd = [4]
@@ -28,9 +28,6 @@ taux_d=4    % pre memory
 taux_r=0.1  % pre memory
 tauy_d=4    % post memory
 tauy_r=0.1  % post memory
-wmax=2.4
-rx=0.15/dt % LTP step
-ry=0.1/dt % LTD step
 
 % Compute normalization factor for alpha
 ratio_x = taux_r / taux_d;
@@ -52,11 +49,12 @@ peak_unscaled = ratio^exponent1 - ratio^exponent2;
 alpha = (tauAMPAd - tauAMPAr) / peak_unscaled * (tauAMPAr + tauAMPAd) / (tauAMPAr * tauAMPAd); % memory amplitude modulation, so that the memory trace is between 0 and 1
 
 % Shared functions
-heavyside_theta = @(x) double(x>0)
-g_syn(s) = gAmpa.*(s)
+g_syn(s) = gAMPA.*(s)
+meta_LTP(b) = -0.01.*(b>4.5) % this is the depressing LTP in E>>I from Agnes and Vogels
 
-Ax(w)=heavyside_theta(wmax-w).*rx % hard bounds
-Ay(w)=w*ry      % soft bounds
+% metaplasticity
+Ax(w, b)=(w .* (0.043*tanh(b*0.6+1.4)-0.043*tanh(b*0.6-1.4)+0.014)/dt)  % LTP step is metaplastic
+Ay(w, b)=w.*(0.042*tanh(b.*0.7+0.7)+0.056)/dt      % LTD step is metaplastic
 detection_interval = 10*dt
 
 % Postsynaptic trace
@@ -71,36 +69,24 @@ dsAMPA1/dt = -(1/tauAMPAr + 1/tauAMPAd) * sAMPA1 + alpha/(tauAMPAd - tauAMPAr) *
 dxSyn1/dt = -(1/taux_r + 1/taux_d) * xSyn1 + alpha_x/(taux_d - taux_r) * sum( (t - tspike_pre - delaySyn1_pre > 0) .* ( exp(-(t - tspike_pre - delaySyn1_pre)/taux_d) - exp(-(t - tspike_pre - delaySyn1_pre)/taux_r) ) );
 
     % Weight change
-dwSyn1/dt=Ax(wSyn1).*repmat(xSyn1,[N_post,1])'.*repmat(sum((t-tspike_post-delay_post)<detection_interval),[N_pre, 1]) - Ay(wSyn1).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre-delaySyn1_pre)<detection_interval),[N_post,1])'
+dwSyn1/dt=[(Ax(wSyn1,balance).*repmat(xSyn1,[N_post,1])'.*repmat(sum((t-tspike_post-delay_post)<detection_interval),[N_pre, 1])) + meta_LTP(balance)] - Ay(wSyn1,balance).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre-delaySyn1_pre)<detection_interval),[N_post,1])'
     
     % Postsynaptic current
 IAMPAsyn1(X,wSyn1,sAMPA1) = -g_syn(sAMPA1)*(wSyn1.*netcon).*(X-EAMPA) .* temp_switch(t)
 
 % E-I balance
-ei_balance(0)=zeros(1,N_post);
+balance(0)=zeros(1,N_post);
 Mean_AMPA(0)=zeros(1,N_post);
 Mean_GABA(0)=zeros(1,N_post);
-tau_balance = 20;
-tau_avg ≈ 5;
 
-% Define smoothed AMPA and GABA currents (exponentially weighted averages)
-dMean_AMPA/dt = (IAMPAsyn1(X,wSyn1,sAMPA1) - Mean_AMPA) / tau_avg;
-dMean_GABA/dt = (@IGABAasyn1 - Mean_GABA) / tau_avg;
+% Define smoothed AMPA and GABA currents
+dMean_AMPA/dt = (@IAMPAsyn - Mean_AMPA);
+dMean_GABA/dt = (@IGABAasyn - Mean_GABA);
 
-% E-I balance ratio (dynamic, per postsynaptic neuron)
-ei_balance' = ((Mean_GABA + eps) ./ (Mean_AMPA + eps) - ei_balance ) / tau_balance);
+% this tracks the sum almost perfectly:
+balance' = ((Mean_GABA + Mean_AMPA) - balance)/3
 
-LTP_meta = 1
-LTD_meta = 1
-balance_threshold_high = 1.2
-balance_threshold_low = 0.8
-
-% Conditions
-if(ei_balance>balance_threshold_high)(LTP_meta=1/ei_balance, LTD_meta=ei_balance)                   % I>E
-if(ei_balance<balance_threshold_high & ei_balance>balance_threshold_low)(LTP_meta=1, LTD_meta=1)    % E~~I
-if(ei_balance>balance_threshold_low)(LTP_meta=ei_balance, LTD_meta=ei_balance)                      % E>I
-
-monitor IAMPAsyn1
+monitor IAMPAsyn1,b
 @current += IAMPAsyn1(X_post,wSyn1,sAMPA1)
 
 % expose IAMPAsyn1 for E-I balance calculation

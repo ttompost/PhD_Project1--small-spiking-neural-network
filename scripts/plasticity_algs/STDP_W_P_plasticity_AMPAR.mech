@@ -2,7 +2,7 @@
 % the STDP change initialy impacts W but extends its influence on P
 
 % AMPA synaptic parameters
-gAmpa = 0.1       % mS/cm2, maximal conductance
+gAMPA = 0.1       % mS/cm2, maximal conductance
 EAMPA = [0]         % mV, reversal potential
 tauAMPAr = [0.2]   
 tauAMPAd = [4]
@@ -62,7 +62,7 @@ alpha = (tauAMPAd - tauAMPAr) / peak_unscaled * (tauAMPAr + tauAMPAd) / (tauAMPA
 
 % Shared functions
 heavyside_theta = @(x) double(x>0)
-g_syn = @(s) gAmpa.*(s)
+g_syn = @(s) gAMPA.*(s)
 
 Ax = @(w) heavyside_theta(wmax-w).*rx % hard bounds
 Ay = @(w) w*ry      % soft bounds
