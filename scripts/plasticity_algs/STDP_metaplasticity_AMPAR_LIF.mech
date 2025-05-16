@@ -1,9 +1,10 @@
-% inhibitory GABAa synapse expresses STDP and metaplasticity
+% excitatory AMPA synapse expresses STDP
 
-gGABAa = [0.25]
-EGABAa = [-80]
-tauGABAad = [10]
-tauGABAar = [0.2]
+% AMPA synaptic parameters
+gAMPA = 0.1       % mS/cm2, maximal conductance
+EAMPA = [0]         % mV, reversal potential
+tauAMPAr = [0.2]   
+tauAMPAd = [4]
 
 settling_time = 0 % ms
 temp_switch = @(x) double(x>=settling_time)
@@ -14,7 +15,7 @@ netcon=ones(N_pre, N_post) % default connectivity matrix is all-to-all
 % ICs
 y(0)=zeros(1,N_post); 
 
-sGABAa1(0)=zeros(1,N_pre)
+sAMPA1(0)=zeros(1,N_pre)
 
 xSyn1(0)=zeros(1,N_pre); 
 wSyn1(0)=ones(N_pre,N_post)
@@ -41,27 +42,27 @@ exponent2y = tauy_d / (tauy_d - tauy_r);
 peak_unscaled_y = ratio_y^exponent1y - ratio_y^exponent2y;
 alpha_y = (tauy_d - tauy_r) / peak_unscaled_y * (tauy_r + tauy_d) / (tauy_r * tauy_d); % memory amplitude modulation, so that the memory trace is between 0 and 1
 
-ratio = tauGABAar / tauGABAad;
-exponent1 = tauGABAar / (tauGABAad - tauGABAar);
-exponent2 = tauGABAad / (tauGABAad - tauGABAar);
+ratio = tauAMPAr / tauAMPAd;
+exponent1 = tauAMPAr / (tauAMPAd - tauAMPAr);
+exponent2 = tauAMPAd / (tauAMPAd - tauAMPAr);
 peak_unscaled = ratio^exponent1 - ratio^exponent2;
-alpha = (tauGABAad - tauGABAar) / peak_unscaled * (tauGABAar + tauGABAad) / (tauGABAar * tauGABAad); % memory amplitude modulation, so that the memory trace is between 0 and 1
+alpha = (tauAMPAd - tauAMPAr) / peak_unscaled * (tauAMPAr + tauAMPAd) / (tauAMPAr * tauAMPAd); % memory amplitude modulation, so that the memory trace is between 0 and 1
 
 % Shared functions
-g_syn(s) = gGABAa.*(s)
+g_syn(s) = gAMPA.*(s)
+setpoint=4.5 % 4.5 for LIF, 0.8 for HH
+meta_LTP(b) = -0.01.*(b>setpoint) % this is the depressing LTP in E>>I from Agnes and Vogels: 0.01 for LIF, 0.1 for HH
 
 % metaplasticity
-rx=0.10/dt % LTP step
-ry=0.10/dt % LTD step
-Ax(w, b)=w.*rx + w.*(0.05*tanh(b+1.3)-0.07*tanh(b-1.3)-0.1)/dt    % LTP step is metaplastic
-Ay(w, b)=w.*ry + w.*(0.08*tanh(b.*0.4))/dt      % LTD step is metaplastic
+Ax(w, b)=w.*(0.043*tanh(b*0.6+1.4)-0.043*tanh(b*0.6-1.4)+0.014)/dt    % LTP step is metaplastic; for LIF
+Ay(w, b)=w.*(0.042*tanh(b.*0.7+0.7)+0.056)/dt                              % LTD step is metaplastic; for LIF
 detection_interval = 10*dt
 
 % Postsynaptic trace
 dy/dt = -(1/tauy_r + 1/tauy_d) * y + alpha_y/(tauy_d - tauy_r) * sum( (t - tspike_post - delay_post > 0) .* ( exp(-(t - tspike_post - delay_post)/tauy_d) - exp(-(t - tspike_post - delay_post)/tauy_r) ) );
 
 % Presynaptic spike detection
-dsGABAa1/dt = -(1/tauGABAar + 1/tauGABAad) * sGABAa1 + alpha/(tauGABAad - tauGABAar) * sum( (t - tspike_pre - delaySyn1_pre > 0) .* ( exp(-(t - tspike_pre - delaySyn1_pre)/tauGABAad) - exp(-(t - tspike_pre - delaySyn1_pre)/tauGABAar) ) );
+dsAMPA1/dt = -(1/tauAMPAr + 1/tauAMPAd) * sAMPA1 + alpha/(tauAMPAd - tauAMPAr) * sum( (t - tspike_pre - delaySyn1_pre > 0) .* ( exp(-(t - tspike_pre - delaySyn1_pre)/tauAMPAd) - exp(-(t - tspike_pre - delaySyn1_pre)/tauAMPAr) ) );
 
 % Independent functions for all synaptic dimensions
 % (1) Main layer
@@ -69,10 +70,10 @@ dsGABAa1/dt = -(1/tauGABAar + 1/tauGABAad) * sGABAa1 + alpha/(tauGABAad - tauGAB
 dxSyn1/dt = -(1/taux_r + 1/taux_d) * xSyn1 + alpha_x/(taux_d - taux_r) * sum( (t - tspike_pre - delaySyn1_pre > 0) .* ( exp(-(t - tspike_pre - delaySyn1_pre)/taux_d) - exp(-(t - tspike_pre - delaySyn1_pre)/taux_r) ) );
 
     % Weight change
-dwSyn1/dt=Ax(wSyn1,balance).*repmat(xSyn1,[N_post,1])'.*repmat(sum((t-tspike_post-delay_post)<detection_interval),[N_pre, 1]) - Ay(wSyn1,balance).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre-delaySyn1_pre)<detection_interval),[N_post,1])'
+dwSyn1/dt=[(Ax(wSyn1,balance).*repmat(xSyn1,[N_post,1])'.*repmat(sum((t-tspike_post-delay_post)<detection_interval),[N_pre, 1])) + meta_LTP(balance)] - Ay(wSyn1,balance).*repmat(y,[N_pre, 1]).*repmat(sum((t-tspike_pre-delaySyn1_pre)<detection_interval),[N_post,1])'
     
     % Postsynaptic current
-IGABAasyn1(X,wSyn1,sGABAa1) = -g_syn(sGABAa1)*(wSyn1.*netcon).*(X-EGABAa) .* temp_switch(t)
+IAMPAsyn1(X,wSyn1,sAMPA1) = -g_syn(sAMPA1)*(wSyn1.*netcon).*(X-EAMPA) .* temp_switch(t)
 
 % E-I balance
 balance(0)=zeros(1,N_post);
@@ -86,6 +87,8 @@ dMean_GABA/dt = (@IGABAasyn - Mean_GABA);
 % this tracks the sum almost perfectly:
 balance' = ((Mean_GABA + Mean_AMPA) - balance)/3
 
-monitor IGABAasyn1
-@current += IGABAasyn1(X_post,wSyn1,sGABAa1)
-@IGABAasyn += IGABAasyn1(X_post,wSyn1,sGABAa1)
+monitor IAMPAsyn1,b
+@current += IAMPAsyn1(X_post,wSyn1,sAMPA1)
+
+% expose IAMPAsyn1 for E-I balance calculation
+@IAMPAsyn += IAMPAsyn1(X_post,wSyn1,sAMPA1)

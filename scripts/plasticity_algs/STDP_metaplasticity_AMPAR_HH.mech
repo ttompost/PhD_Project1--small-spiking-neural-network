@@ -50,11 +50,12 @@ alpha = (tauAMPAd - tauAMPAr) / peak_unscaled * (tauAMPAr + tauAMPAd) / (tauAMPA
 
 % Shared functions
 g_syn(s) = gAMPA.*(s)
-meta_LTP(b) = -0.01.*(b>4.5) % this is the depressing LTP in E>>I from Agnes and Vogels
+setpoint=0.8 % 4.5 for LIF, 0.8 for HH
+meta_LTP(b) = -0.1.*(b>setpoint) % this is the depressing LTP in E>>I from Agnes and Vogels: 0.01 for LIF, 0.1 for HH
 
 % metaplasticity
-Ax(w, b)=(w .* (0.043*tanh(b*0.6+1.4)-0.043*tanh(b*0.6-1.4)+0.014)/dt)  % LTP step is metaplastic
-Ay(w, b)=w.*(0.042*tanh(b.*0.7+0.7)+0.056)/dt      % LTD step is metaplastic
+Ax(w, b)=w.*(0.014+0.08*exp(-b.^2/(2*(0.6*0.8/sqrt(-2*log((0.15-0.11)/0.08)))^2)))/dt                      % LTP step is metaplastic; for HH
+Ay(w, b)=w.*(0.036*tanh(b+0.4)+0.05)/dt                                   % LTD step is metaplastic; for HH
 detection_interval = 10*dt
 
 % Postsynaptic trace
