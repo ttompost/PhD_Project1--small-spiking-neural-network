@@ -151,19 +151,19 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
     % connect populations in L2 layer 
     L2.connections(1).direction='L2E->L2E'; % E to E
     L2.connections(end).mechanism_list={'iAMPA_temp'};
-    L2.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ee,'netcon',l2EEnetcon,'IC',IC};
+    L2.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ee,'netcon',l2EEnetcon,'settling_time',settling_time, 'IC',IC};
 
     L2.connections(end+1).direction='L2E->L2I'; % E to I
     L2.connections(end).mechanism_list={'iAMPA_temp'};
-    L2.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ei,'netcon',l2EInetcon,'IC',IC}; 
+    L2.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ei,'netcon',l2EInetcon,'settling_time',settling_time, 'IC',IC}; 
 
     L2.connections(end+1).direction='L2I->L2E'; % I to E
     L2.connections(end).mechanism_list={'iGABAa_temp'};
-    L2.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ie,'netcon',l2IEnetcon,'IC',IC,'tauD',tauD_GABAa, 'EGABAa',EGABAa}; 
+    L2.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ie,'netcon',l2IEnetcon,'settling_time',settling_time, 'IC',IC,'tauD',tauD_GABAa, 'EGABAa',EGABAa}; 
 
     L2.connections(end+1).direction='L2I->L2I'; % I to I
     L2.connections(end).mechanism_list={'iGABAa_temp'};
-    L2.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ii,'netcon',l2IInetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
+    L2.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ii,'netcon',l2IInetcon,'settling_time',settling_time, 'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
     L2=dsCheckSpecification(L2); 
 
     % L3
@@ -189,19 +189,19 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
     % connect populations in L3 layer 
     L3.connections(1).direction='L3E->L3E'; % E to E
     L3.connections(end).mechanism_list={'iAMPA_temp'};
-    L3.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ee,'netcon',l3EEnetcon,'IC',IC};
+    L3.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ee,'netcon',l3EEnetcon,'settling_time',settling_time, 'IC',IC};
 
     L3.connections(end+1).direction='L3E->L3I'; % E to I
     L3.connections(end).mechanism_list={'iAMPA_temp'};
-    L3.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ei,'netcon',l3EInetcon,'IC',IC}; 
+    L3.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ei,'netcon',l3EInetcon,'settling_time',settling_time, 'IC',IC}; 
 
     L3.connections(end+1).direction='L3I->L3E'; % I to E
     L3.connections(end).mechanism_list={'iGABAa_temp'};
-    L3.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ie,'netcon',l3IEnetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
+    L3.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ie,'netcon',l3IEnetcon,'settling_time',settling_time, 'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
 
     L3.connections(end+1).direction='L3I->L3I'; % I to I
     L3.connections(end).mechanism_list={'iGABAa_temp'};
-    L3.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ii,'netcon',l3IInetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
+    L3.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ii,'netcon',l3IInetcon,'settling_time',settling_time, 'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
     L3=dsCheckSpecification(L3); 
 
 
@@ -228,19 +228,19 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
     % connect populations in L4 layer 
     L4.connections(1).direction='L4E->L4E'; % E to E
     L4.connections(end).mechanism_list={'iAMPA_temp'};
-    L4.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ee,'netcon',l4EEnetcon,'IC',IC};
+    L4.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ee,'netcon',l4EEnetcon,'settling_time',settling_time, 'IC',IC};
 
     L4.connections(end+1).direction='L4E->L4I'; % E to I
     L4.connections(end).mechanism_list={'iAMPA_temp'};
-    L4.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ei,'netcon',l4EInetcon,'IC',IC}; 
+    L4.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ie,'netcon',l4EInetcon,'settling_time',settling_time, 'IC',IC}; 
 
     L4.connections(end+1).direction='L4I->L4E'; % I to E
     L4.connections(end).mechanism_list={'iGABAa_temp'};
-    L4.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ie,'netcon',l4IEnetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
+    L4.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ei,'netcon',l4IEnetcon,'settling_time',settling_time, 'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
 
     L4.connections(end+1).direction='L4I->L4I'; % I to I
     L4.connections(end).mechanism_list={'iGABAa_temp'};
-    L4.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ii,'netcon',l4IInetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
+    L4.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ii,'netcon',l4IInetcon,'settling_time',settling_time, 'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
     L4=dsCheckSpecification(L4); 
 
     % MAKE A THALAMIC LAYER:
@@ -287,11 +287,11 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
             % thalamic to l4
         Network.connections(end+1).direction='VPM->L4E'; % ThE to l4E
         Network.connections(end).mechanism_list={'iAMPA_temp'};
-        Network.connections(end).parameters={'gAMPA',gAMPA_th,'netcon',thl4EEnetcon, 'IC', IC};
+        Network.connections(end).parameters={'gAMPA',gAMPA_th,'netcon',thl4EEnetcon, 'settling_time',settling_time, 'IC', IC};
 
         Network.connections(end+1).direction='VPM->L4I'; % ThE to l4I
         Network.connections(end).mechanism_list={'iAMPA_temp'};
-        Network.connections(end).parameters={'gAMPA',gAMPA_th,'netcon',thl4EInetcon, 'IC', IC}; 
+        Network.connections(end).parameters={'gAMPA',gAMPA_th,'netcon',thl4EInetcon, 'settling_time',settling_time, 'IC', IC}; 
 
     else
         % thalamic params
@@ -358,19 +358,19 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
             % thalamic to l4
         Network.connections(end+1).direction='VPMcorr->L4E'; % ThE to l4E
         Network.connections(end).mechanism_list={'iAMPA_temp'};
-        Network.connections(end).parameters={'gAMPA',gAMPA_th*AMPA_scale_ee,'netcon',thl4EEnetcon1,'IC',IC, 'settling_time', settling_time};
+        Network.connections(end).parameters={'gAMPA',gAMPA_th*AMPA_scale_ee,'netcon',thl4EEnetcon1,'settling_time',settling_time, 'IC',IC};
 
         Network.connections(end+1).direction='VPMcorr->L4I'; % ThE to l4I
         Network.connections(end).mechanism_list={'iAMPA_temp'};
-        Network.connections(end).parameters={'gAMPA',gAMPA_th*AMPA_scale_ei,'netcon',thl4EInetcon1,'IC',IC,'settling_time', settling_time}; 
+        Network.connections(end).parameters={'gAMPA',gAMPA_th*AMPA_scale_ei,'netcon',thl4EInetcon1,'settling_time',settling_time, 'IC',IC}; 
 
         Network.connections(end+1).direction='VPMuncorr->L4E'; % ThE to l4E
         Network.connections(end).mechanism_list={'iAMPA_temp'};
-        Network.connections(end).parameters={'gAMPA',gAMPA_th*AMPA_scale_ee,'netcon',thl4EEnetcon2,'IC',IC,'settling_time', settling_time};
+        Network.connections(end).parameters={'gAMPA',gAMPA_th*AMPA_scale_ee,'netcon',thl4EEnetcon2,'settling_time',settling_time, 'IC',IC};
 
         Network.connections(end+1).direction='VPMuncorr->L4I'; % ThE to l4I
         Network.connections(end).mechanism_list={'iAMPA_temp'};
-        Network.connections(end).parameters={'gAMPA',gAMPA_th*AMPA_scale_ei,'netcon',thl4EInetcon2,'IC',IC,'settling_time', settling_time};
+        Network.connections(end).parameters={'gAMPA',gAMPA_th*AMPA_scale_ei,'netcon',thl4EInetcon2,'settling_time',settling_time, 'IC',IC};
 
         %     % thalamic to l3
         % thl3EEnetcon=ConnMx(0,'trans','none',vpmNum1,l3e_num,(ConnMxParam('thl4e','pconn', pconn_e)*corr_contribution)/2,ConnMxParam('thl4e','nb', pconn_e)/2,1); % corr
@@ -378,11 +378,11 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
         % 
         % Network.connections(end+1).direction='VPMcorr->L3E'; % ThE to l4E
         % Network.connections(end).mechanism_list={'iAMPA_temp'};
-        % Network.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_th,'netcon',thl3EEnetcon,'IC',IC};
+        % Network.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_th,'netcon',thl3EEnetcon,'settling_time',settling_time, 'IC',IC};
         %  
         % Network.connections(end+1).direction='VPMcorr->L3I'; % ThE to l4I
         % Network.connections(end).mechanism_list={'iAMPA_temp'};
-        % Network.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_th,'netcon',thl3EInetcon,'IC',IC}; 
+        % Network.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_th,'netcon',thl3EInetcon,'settling_time',settling_time, 'IC',IC}; 
     end
 
     %     % L4 -> L3
@@ -398,32 +398,32 @@ function net = SimN4(eNum_perc, iNum_perc, VPM_num, synParams, ang, curv, input_
         % l4 to l23 (l4 to l3)
     Network.connections(end+1).direction='L4E->L3E'; % l4E to l3E
     Network.connections(end).mechanism_list={'iAMPA_temp'};
-    Network.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ee,'netcon',l4l3EEnetcon,'IC',IC};
+    Network.connections(end).parameters={'gAMPA',gAMPA,'netcon',l4l3EEnetcon,'settling_time',settling_time, 'IC',IC};
 
     Network.connections(end+1).direction='L4E->L3I'; % l4E to l3I
     Network.connections(end).mechanism_list={'iAMPA_temp'};
-    Network.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ei,'netcon',l4l3EInetcon,'IC',IC};
+    Network.connections(end).parameters={'gAMPA',gAMPA,'netcon',l4l3EInetcon,'settling_time',settling_time, 'IC',IC};
 
     Network.connections(end+1).direction='L4I->L3E'; % l4I to l3E
     Network.connections(end).mechanism_list={'iGABAa_temp'};
-    Network.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ie,'netcon',l4l3IEnetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
+    Network.connections(end).parameters={'gGABA',gGABAa,'netcon',l4l3IEnetcon,'settling_time',settling_time, 'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
 
         % l23 to l23 feedforward (l3 to l2)
     Network.connections(end+1).direction='L3E->L2E'; % l3E to l2E
     Network.connections(end).mechanism_list={'iAMPA_temp'};
-    Network.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ee,'netcon',l3l2EEnetcon,'IC',IC}; 
+    Network.connections(end).parameters={'gAMPA',gAMPA,'netcon',l3l2EEnetcon,'settling_time',settling_time, 'IC',IC}; 
 
     Network.connections(end+1).direction='L3E->L2I'; % l3E to l2I
     Network.connections(end).mechanism_list={'iAMPA_temp'};
-    Network.connections(end).parameters={'gAMPA',gAMPA*AMPA_scale_ei,'netcon',l3l2EInetcon,'IC',IC};
+    Network.connections(end).parameters={'gAMPA',gAMPA,'netcon',l3l2EInetcon,'settling_time',settling_time, 'IC',IC};
 
     Network.connections(end+1).direction='L3I->L2E'; % l3I to l2E
     Network.connections(end).mechanism_list={'iGABAa_temp'};
-    Network.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ie,'netcon',l3l2IEnetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
+    Network.connections(end).parameters={'gGABA',gGABAa,'netcon',l3l2IEnetcon,'settling_time',settling_time, 'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
 
     Network.connections(end+1).direction='L3I->L2I'; % l3I to l2I
     Network.connections(end).mechanism_list={'iGABAa_temp'};
-    Network.connections(end).parameters={'gGABA',gGABAa*GABAa_scale_ii,'netcon',l3l2IInetcon,'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
+    Network.connections(end).parameters={'gGABA',gGABAa,'netcon',l3l2IInetcon,'settling_time',settling_time, 'IC',IC,'tauD',tauD_GABAa,'EGABAa',EGABAa}; 
 
     Network=dsCheckSpecification(Network); 
 

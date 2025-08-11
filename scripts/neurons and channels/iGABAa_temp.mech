@@ -4,7 +4,7 @@ gGABAa = [0.25]
 EGABAa = [-80]
 tauD = [10]
 tauR = [0.2]
-IC = [0.1]
+IC = 1e-5
 IC_noise = [0]
 
 settling_time = 0 % ms

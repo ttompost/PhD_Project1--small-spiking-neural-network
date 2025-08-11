@@ -22,7 +22,8 @@ ITChing2010TC(X,hT) = gT.*Minf(X).^2.*hT.*(X-ET(@CaBuffer))
 
 % ODEs and ICs
 hT' = (Hinf(X)-hT)./tauH(X);
-hT(0)=.34+.1.*rand(1,Npop);
+hT(0)=zeros(1,Npop)
+%.34+.1.*rand(1,Npop);
 
 % Interface
 @current += -ITChing2010TC(X,hT)
